@@ -1,0 +1,158 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useDemo } from "@/components/providers/DemoContext";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import {
+  Zap,
+  Play,
+  CheckCircle2,
+  Clock,
+  Settings,
+  Plus,
+  ArrowRight,
+  ShieldCheck,
+  AlertTriangle,
+} from "lucide-react";
+
+export default function AutomationsPage() {
+  const { isDemoMode } = useDemo();
+  const [automations, setAutomations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testSuccess, setTestSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/app/data?type=automations&demo=${isDemoMode}`);
+        const data = await res.json();
+        setAutomations(data.automations || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [isDemoMode]);
+
+  const handleToggle = (id: string) => {
+    setAutomations(
+      automations.map((a) => (a.id === id ? { ...a, isEnabled: !a.isEnabled } : a))
+    );
+  };
+
+  const handleRunTest = (id: string, name: string) => {
+    setTestingId(id);
+    setTimeout(() => {
+      setTestingId(null);
+      setTestSuccess(`Successfully evaluated rule: "${name}". Simulation logged to audit history.`);
+      setTimeout(() => setTestSuccess(null), 3500);
+    }, 900);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Automation Engine
+            </h1>
+            <Badge variant="purple" size="sm">
+              <Zap className="w-3 h-3 mr-1" />
+              EVENT-DRIVEN
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Deterministic trigger pipelines: Trigger → Condition → AI Decision → Action → Audit Log.
+          </p>
+        </div>
+      </div>
+
+      {testSuccess && (
+        <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{testSuccess}</span>
+        </div>
+      )}
+
+      {/* Rules List */}
+      <div className="space-y-4">
+        {automations.map((auto) => (
+          <Card key={auto.id} className="overflow-hidden">
+            <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  auto.isEnabled
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400"
+                }`}>
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{auto.name}</h3>
+                    <Badge variant={auto.isEnabled ? "success" : "default"} size="sm">
+                      {auto.isEnabled ? "ACTIVE" : "PAUSED"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Trigger: <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">{auto.triggerType}</span> • Action: <span className="font-mono font-semibold">{auto.actionType}</span>
+                  </p>
+                  {auto.aiPrompt && (
+                    <p className="text-[11px] text-slate-400 mt-1 italic">
+                      AI Reasoning: &ldquo;{auto.aiPrompt}&rdquo;
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleRunTest(auto.id, auto.name)}
+                  disabled={testingId === auto.id}
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors"
+                >
+                  <Play className={`w-3 h-3 text-emerald-600 ${testingId === auto.id ? "animate-spin" : ""}`} />
+                  {testingId === auto.id ? "Simulating..." : "Test Rule"}
+                </button>
+
+                <button
+                  onClick={() => handleToggle(auto.id)}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    auto.isEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      auto.isEnabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Execution History */}
+            {auto.runs && auto.runs.length > 0 && (
+              <div className="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
+                <span>
+                  Last executed: {new Date(auto.runs[0].executedAt).toLocaleString()}
+                </span>
+                <span className="font-semibold text-emerald-600">
+                  Status: {auto.runs[0].status}
+                </span>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}

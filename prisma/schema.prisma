@@ -1,0 +1,369 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                String          @id @default(cuid())
+  email             String          @unique
+  passwordHash      String
+  name              String
+  role              String          @default("MERCHANT") // ADMIN, MERCHANT, VIEWER
+  avatarUrl         String?
+  isEmailVerified   Boolean         @default(false)
+  twoFactorEnabled  Boolean         @default(false)
+  twoFactorSecret   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  sessions          Session[]
+  securityEvents    SecurityEvent[]
+  auditLogs         AuditLog[]
+  stores            Store[]
+  products          Product[]
+  orders            Order[]
+  customers         Customer[]
+  automations       Automation[]
+  notifications     Notification[]
+  adCampaigns       AdCampaign[]
+  aiRequests        AiRequest[]
+  subscription      Subscription?
+}
+
+model Session {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token         String    @unique
+  ipAddress     String
+  userAgent     String
+  deviceType    String    // Desktop, Mobile, Tablet
+  browser       String    // Chrome, Firefox, Safari, Edge
+  location      String    // e.g. "New York, US"
+  isValid       Boolean   @default(true)
+  lastActiveAt  DateTime  @default(now())
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+}
+
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType   String   // LOGIN_SUCCESS, LOGIN_FAIL, 2FA_ENABLE, PASSWORD_RESET, SESSION_REVOKED
+  ipAddress   String
+  userAgent   String?
+  location    String?
+  metadata    String?  // JSON string
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId     String?
+  action      String   // CREATE, UPDATE, DELETE, IMPORT, EXPORT, CONNECT, DISCONNECT, EXECUTE_AI
+  entityType  String   // PRODUCT, ORDER, SUPPLIER, STORE, AUTOMATION, SETTINGS
+  entityId    String?
+  oldValue    String?  // JSON string
+  newValue    String?  // JSON string
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
+
+model Store {
+  id             String           @id @default(cuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  platform       String           // SHOPIFY, WOOCOMMERCE, BIGCOMMERCE, CUSTOM
+  storeUrl       String
+  status         String           @default("CONNECTED") // CONNECTED, DISCONNECTED, ERROR
+  currency       String           @default("USD")
+  country        String           @default("US")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  connections    StoreConnection[]
+  products       Product[]
+  orders         Order[]
+  customers      Customer[]
+  automations    Automation[]
+  adCampaigns    AdCampaign[]
+}
+
+model StoreConnection {
+  id                   String    @id @default(cuid())
+  storeId              String
+  store                Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  platform             String
+  apiKeyEncrypted      String?
+  apiSecretEncrypted   String?
+  accessTokenEncrypted String?
+  webhookSecret        String?
+  scopes               String?
+  lastSyncAt           DateTime?
+  status               String    @default("ACTIVE")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Supplier {
+  id                   String            @id @default(cuid())
+  name                 String
+  platform             String            // ALIEXPRESS, CJ_DROPSHIPPING, ZENDROP, SPOCKET, DIRECT
+  rating               Float             @default(4.8)
+  fulfillmentSpeedDays Int               @default(7)
+  returnPolicy         String            @default("30-day buyer protection")
+  country              String            @default("CN")
+  websiteUrl           String?
+  contactEmail         String?
+  reliabilityScore     Float             @default(95.0)
+  totalOrdersFulfilled Int               @default(0)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  supplierProducts     SupplierProduct[]
+}
+
+model Product {
+  id                String             @id @default(cuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId           String?
+  store             Store?             @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  title             String
+  slug              String
+  description       String
+  sku               String             @unique
+  category          String
+  status            String             @default("ACTIVE") // DRAFT, ACTIVE, ARCHIVED
+  sellingPrice      Float
+  costPrice         Float
+  compareAtPrice    Float?
+  inventory         Int                @default(0)
+  images            String             // JSON array of image URLs
+  tags              String?            // comma-separated or JSON
+  countryTarget     String             @default("US")
+  aiScore           Float              @default(85.0)
+  demandScore       Float              @default(88.0)
+  competitionScore  Float              @default(42.0)
+  marginScore       Float              @default(78.0)
+  trendScore        Float              @default(91.0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  variants          ProductVariant[]
+  supplierProducts  SupplierProduct[]
+  orderItems        OrderItem[]
+}
+
+model ProductVariant {
+  id         String      @id @default(cuid())
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title      String      // e.g. "Midnight Black / M"
+  sku        String      @unique
+  price      Float
+  cost       Float
+  inventory  Int         @default(0)
+  options    String?     // JSON of attributes e.g. {"Color": "Black", "Size": "M"}
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model SupplierProduct {
+  id             String    @id @default(cuid())
+  supplierId     String
+  supplier       Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  externalId     String?
+  sourceUrl      String?
+  unitCost       Float
+  shippingCost   Float     @default(0.0)
+  stockQuantity  Int       @default(1000)
+  deliveryDays   Int       @default(7)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Customer {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId      String?
+  store        Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  name         String
+  email        String
+  phone        String?
+  country      String    @default("US")
+  city         String?
+  totalSpent   Float     @default(0.0)
+  ordersCount  Int       @default(0)
+  riskScore    Float     @default(5.0) // 0-100 fraud risk score
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  orders       Order[]
+}
+
+model Order {
+  id                 String       @id @default(cuid())
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId            String?
+  store              Store?       @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  customerId         String?
+  customer           Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  orderNumber        String       @unique
+  status             String       @default("PAID") // PENDING, PAID, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
+  financialStatus    String       @default("PAID") // PENDING, PAID, REFUNDED, PARTIALLY_REFUNDED
+  fulfillmentStatus  String       @default("UNFULFILLED") // UNFULFILLED, PROCESSING, SHIPPED, DELIVERED
+  totalAmount        Float
+  subtotalAmount     Float
+  taxAmount          Float        @default(0.0)
+  shippingAmount     Float        @default(0.0)
+  profitAmount       Float        @default(0.0)
+  currency           String       @default("USD")
+  riskLevel          String       @default("LOW") // LOW, MEDIUM, HIGH
+  idempotencyKey     String?      @unique
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  items              OrderItem[]
+  shipments          Shipment[]
+}
+
+model OrderItem {
+  id         String          @id @default(cuid())
+  orderId    String
+  order      Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String?
+  product    Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId  String?
+  variant    ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  title      String
+  quantity   Int
+  price      Float
+  cost       Float
+  total      Float
+}
+
+model Shipment {
+  id                String    @id @default(cuid())
+  orderId           String
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  carrier           String    // USPS, DHL, FEDEX, YUNEXPRESS, EPACKET
+  trackingNumber    String    @unique
+  trackingUrl       String?
+  status            String    @default("IN_TRANSIT") // LABEL_CREATED, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, EXCEPTION
+  estimatedDelivery DateTime?
+  shippingCost      Float     @default(0.0)
+  eventsJson        String?   // JSON array of milestone events
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model AdCampaign {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId      String?
+  store        Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  platform     String    // META, GOOGLE, TIKTOK, YOUTUBE
+  campaignName String
+  status       String    @default("ACTIVE") // ACTIVE, PAUSED, DRAFT, ENDED
+  dailyBudget  Float
+  totalSpend   Float     @default(0.0)
+  impressions  Int       @default(0)
+  clicks       Int       @default(0)
+  conversions  Int       @default(0)
+  roas         Float     @default(0.0)
+  revenue      Float     @default(0.0)
+  cpc          Float     @default(0.0)
+  cpm          Float     @default(0.0)
+  ctr          Float     @default(0.0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Automation {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId           String?
+  store             Store?          @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  name              String
+  triggerType       String          // LOW_INVENTORY, HIGH_RISK_ORDER, COMPETITOR_PRICE_DROP, NEW_ORDER, FULFILLMENT_DELAY
+  conditionsJson    String          // JSON rule criteria
+  aiPrompt          String?         // Optional AI reasoning prompt
+  actionType        String          // SWITCH_SUPPLIER, HOLD_ORDER, ADJUST_PRICE, NOTIFY_MERCHANT, AUTO_FULFILL
+  actionPayloadJson String?         // JSON action params
+  isEnabled         Boolean         @default(true)
+  runCount          Int             @default(0)
+  lastRunAt         DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  runs              AutomationRun[]
+}
+
+model AutomationRun {
+  id              String      @id @default(cuid())
+  automationId    String
+  automation      Automation  @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  status          String      // SUCCESS, FAILED, REQUIRE_APPROVAL
+  triggerDataJson String?
+  resultDataJson  String?
+  errorMessage    String?
+  executedAt      DateTime    @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // INFO, WARNING, ALERT, SUCCESS
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AiRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module          String   // PRODUCT_RESEARCH, PRICING, ADS, ASSISTANT, AUTOMATION
+  prompt          String
+  response        String
+  toolCallsJson   String?  // JSON structured tool logs
+  tokensUsed      Int      @default(0)
+  executionTimeMs Int      @default(0)
+  createdAt       DateTime @default(now())
+}
+
+model Subscription {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                String    @default("PRO") // FREE, STARTER, PRO, ENTERPRISE
+  status              String    @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED
+  currentPeriodEnd    DateTime
+  aiCreditsRemaining  Int       @default(5000)
+  aiCreditsTotal      Int       @default(5000)
+  ordersProcessedThisMonth Int  @default(0)
+  storesLimit         Int       @default(5)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
