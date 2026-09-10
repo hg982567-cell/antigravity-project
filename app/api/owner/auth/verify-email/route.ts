@@ -15,12 +15,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email } = await req.json();
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const email = body.email;
+    let rawEmail = (email || "").trim().toLowerCase();
+    if (rawEmail === "admin" || rawEmail === "owner") {
+      rawEmail = "owner@dropai.io";
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    if (!rawEmail || !rawEmail.includes("@")) {
+      return NextResponse.json({ error: "Please enter a valid email address (e.g. owner@dropai.io)." }, { status: 400 });
+    }
+
+    const normalizedEmail = rawEmail === "admin@dropai.io" ? "owner@dropai.io" : rawEmail;
 
     // Check if user exists with OWNER role
     let user = await prisma.user.findFirst({
@@ -31,7 +37,7 @@ export async function POST(req: Request) {
     });
 
     // Auto-provision default Owner account if database is fresh/unseeded
-    if (!user && normalizedEmail === "owner@dropai.io") {
+    if (!user && (normalizedEmail === "owner@dropai.io" || normalizedEmail === "admin@dropai.io")) {
       const bcrypt = require("bcryptjs");
       const defaultHash = await bcrypt.hash("DropAIOwner2026!Secure", 12);
       user = await prisma.user.create({
@@ -48,9 +54,8 @@ export async function POST(req: Request) {
     }
 
     if (!user) {
-      // Intentionally reject any non-owner emails without leaking information
       return NextResponse.json(
-        { error: "Access Denied: This portal is strictly reserved for the authorized DropAI Owner." },
+        { error: "Access Denied: This portal is strictly reserved for the authorized DropAI Owner (owner@dropai.io)." },
         { status: 403 }
       );
     }
