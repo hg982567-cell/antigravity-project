@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shield, Lock, KeyRound, ArrowRight, CheckCircle2, AlertTriangle, Terminal } from "lucide-react";
 
@@ -241,12 +242,21 @@ export default function OwnerLoginPage() {
         )}
 
         {/* Footer Warning */}
-        <div className="mt-6 pt-4 border-t border-slate-800 text-center">
+        <div className="mt-6 pt-4 border-t border-slate-800 text-center space-y-3">
           <p className="text-[10px] text-slate-400 leading-relaxed font-mono">
             UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED AND MONITORED.
             <br />
             ALL IP ADDRESSES AND SESSION ATTEMPTS ARE IMMUTABLY RECORDED.
           </p>
+
+          <div className="pt-2 border-t border-slate-800/60">
+            <Link
+              href="/app/dashboard"
+              className="text-[11px] font-mono text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
+            >
+              <span>← Return to DropAI Merchant Portal</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

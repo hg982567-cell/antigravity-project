@@ -22,6 +22,7 @@ import {
   LogOut,
   ChevronRight,
   ExternalLink,
+  Store,
 } from "lucide-react";
 
 interface OwnerSidebarProps {
@@ -36,6 +37,7 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
       title: "COMMAND CENTER",
       items: [
         { label: "Overview", href: "/owner/dashboard", icon: Activity },
+        { label: "DropAI Stores & Pipeline", href: "/owner/dashboard#stores", icon: Store },
         { label: "System Health", href: "/owner/dashboard#health", icon: Radio },
       ],
     },
@@ -113,6 +115,22 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
               OWNER CONTROL
             </span>
           </div>
+        </Link>
+      </div>
+
+      {/* Direct Bridge to DropAI Merchant Platform */}
+      <div className="p-2.5 border-b border-slate-800/60 bg-slate-900/40">
+        <Link
+          href="/app/dashboard"
+          className="flex items-center justify-between px-3 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:text-blue-300 text-xs font-bold transition-all group"
+        >
+          <span className="flex items-center gap-2">
+            <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            DropAI Store Platform
+          </span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500 text-white font-mono">
+            APP
+          </span>
         </Link>
       </div>
 

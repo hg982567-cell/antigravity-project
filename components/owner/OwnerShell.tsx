@@ -11,6 +11,7 @@ import {
   FileText,
   Clock,
   UserCheck,
+  Store,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -82,6 +83,15 @@ export function OwnerShell({ children }: OwnerShellProps) {
           </div>
 
           <div className="flex items-center gap-2.5">
+            <Link
+              href="/app/dashboard"
+              className="px-2.5 py-1 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/60 text-blue-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+              title="Launch DropAI Merchant Platform"
+            >
+              <Store className="w-3.5 h-3.5 text-blue-400" />
+              <span className="hidden sm:inline">DropAI App</span>
+            </Link>
+
             <Link
               href="/owner/system#lockdown"
               className="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
