@@ -51,12 +51,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail("demo@dropai.io");
-    setPassword("password123");
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
@@ -72,24 +66,12 @@ export default function LoginPage() {
           Sign in to your merchant dashboard
         </h2>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Protected by rate-limiting, session token verification, and tenant isolation.
+          Enter your registered email ID and password to access your real store dashboard.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white dark:bg-slate-900 py-8 px-6 shadow-xl border border-slate-200 dark:border-slate-800 sm:rounded-2xl sm:px-10">
-          <div className="mb-6 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 flex items-center justify-between">
-            <div className="text-xs text-blue-800 dark:text-blue-300">
-              <span className="font-bold">Evaluation Account:</span> demo@dropai.io
-            </div>
-            <button
-              type="button"
-              onClick={fillDemoCredentials}
-              className="text-xs font-semibold px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors"
-            >
-              Fill Demo
-            </button>
-          </div>
 
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 flex items-center gap-2.5 text-xs text-red-700 dark:text-red-400">
@@ -101,7 +83,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Merchant Email
+                Email ID (e.g. Gmail / Work Email)
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -110,7 +92,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@store.com"
+                  placeholder="your-email@gmail.com"
                   className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -155,38 +137,10 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
             >
-              {loading ? "Authenticating..." : "Sign In to Dashboard"}
+              {loading ? "Authenticating..." : "Sign In with Email & Password"}
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-800" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-slate-400">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className="w-full py-2 px-3 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-center"
-              >
-                Google OAuth
-              </button>
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className="w-full py-2 px-3 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-center"
-              >
-                Shopify Login
-              </button>
-            </div>
-          </div>
 
           <div className="mt-6 text-center text-xs text-slate-500">
             Don&apos;t have an account?{" "}

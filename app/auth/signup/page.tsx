@@ -40,7 +40,7 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/auth/verify-email?email=" + encodeURIComponent(email));
+      router.push("/app/dashboard");
     } catch {
       setError("Network error connecting to registration server.");
       setLoading(false);

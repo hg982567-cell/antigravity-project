@@ -77,7 +77,7 @@ export async function POST(req: Request) {
         passwordHash,
         name: name.trim(),
         role: "MERCHANT",
-        isEmailVerified: false,
+        isEmailVerified: true,
       },
     });
 
