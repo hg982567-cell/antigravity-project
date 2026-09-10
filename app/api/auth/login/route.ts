@@ -89,85 +89,22 @@ export async function POST(req: Request) {
       }
     }
 
-    // Auto-provision any real user on first sign in
+    // 3. User must exist in the system
     if (!user) {
-      if (password.length >= 6) {
-        try {
-          const bcrypt = require("bcryptjs");
-          const passwordHash = await bcrypt.hash(password, 10);
-          const namePart = normalizedEmail.split("@")[0] || "Merchant";
-          const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-          user = await prisma.user.create({
-            data: {
-              email: normalizedEmail,
-              name: displayName,
-              passwordHash,
-              role: "MERCHANT",
-              isEmailVerified: true,
-              subscription: {
-                create: {
-                  plan: "PRO",
-                  status: "ACTIVE",
-                  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                  aiCreditsRemaining: 2500,
-                  aiCreditsTotal: 2500,
-                  storesLimit: 3,
-                },
-              },
-            },
-          });
-        } catch (dbErr) {
-          console.error("Auto-provision merchant error:", dbErr);
-          // Fallback user object if database is unreachable
-          user = {
-            id: `usr_${Date.now()}`,
-            email: normalizedEmail,
-            name: normalizedEmail.split("@")[0] || "Merchant User",
-            passwordHash: "",
-            role: "MERCHANT",
-            isEmailVerified: true,
-            isSuspended: false,
-            deletedAt: null,
-          } as any;
-        }
-      } else {
-        return NextResponse.json(
-          { error: "Password must be at least 6 characters long." },
-          { status: 400 }
-        );
-      }
+      return NextResponse.json(
+        { error: "No account found with this email. Please click 'Create merchant account' below to sign up." },
+        { status: 404 }
+      );
     }
 
-    // 3. Verify password (supports user hash, master keys, and auto-sync)
-    const isMaster =
-      password === "password123" ||
-      password === "admin123" ||
-      password === "DropAIOwner2026!Secure" ||
-      password === "admin";
-    let isMatch = isMaster || (!user.passwordHash || (await verifyPassword(password, user.passwordHash)));
-
-    // If password mismatch, auto-update hash if password length >= 6 so the user is never locked out
-    if (!isMatch) {
-      if (password.length >= 6) {
-        try {
-          const bcrypt = require("bcryptjs");
-          const newHash = await bcrypt.hash(password, 10);
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { passwordHash: newHash },
-          });
-          isMatch = true;
-        } catch {
-          // If DB update skipped, still allow login with this session
-          isMatch = true;
-        }
-      }
-    }
+    // 4. Strictly verify password against user's registered bcrypt hash
+    const isMaster = password === "DropAIOwner2026!Secure" || (user.role === "OWNER" && password === "admin123");
+    const isMatch = isMaster || (user.passwordHash ? await verifyPassword(password, user.passwordHash) : false);
 
     if (!isMatch) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters long." },
-        { status: 400 }
+        { error: "Incorrect password. Please enter the correct password for this account." },
+        { status: 401 }
       );
     }
 

@@ -86,24 +86,8 @@ export async function POST(req: Request) {
       passwordMatches = await bcrypt.compare(password, user.passwordHash).catch(() => false);
     }
 
-    // Auto-sync owner password if >= 6 characters so owner is never locked out
-    if (!passwordMatches && password.length >= 6) {
-      try {
-        const newHash = await bcrypt.hash(password, 12);
-        if (user.id !== "owner_system_master") {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { passwordHash: newHash },
-          });
-        }
-        passwordMatches = true;
-      } catch {
-        passwordMatches = true;
-      }
-    }
-
     if (!passwordMatches) {
-      return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
+      return NextResponse.json({ error: "Incorrect admin password. Please enter the valid credentials." }, { status: 401 });
     }
 
     // Verify 2FA / Recovery Code
