@@ -12,13 +12,7 @@ if (!fs.existsSync(schemaPath)) {
 let schema = fs.readFileSync(schemaPath, "utf8");
 
 if (target === "postgres" || target === "postgresql") {
-  schema = schema.replace(/provider\s*=\s*"sqlite"/, 'provider  = "postgresql"');
-  if (!schema.includes("directUrl")) {
-    schema = schema.replace(
-      'url      = env("DATABASE_URL")',
-      'url       = env("DATABASE_URL")\n  directUrl = env("DIRECT_URL")'
-    );
-  }
+  schema = schema.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
   fs.writeFileSync(schemaPath, schema);
   console.log("✅ Configured Prisma for Cloud PostgreSQL (Vercel & Production)");
 } else {
