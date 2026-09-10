@@ -1,6 +1,9 @@
 import React from "react";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "DropAI — Owner Super Admin Command Center",
   description: "Restricted Access: DropAI Platform Owner Control Center",

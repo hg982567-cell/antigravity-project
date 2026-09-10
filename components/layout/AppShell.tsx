@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useSystem } from "@/components/providers/SystemContext";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { lockdownActive, lockdownReason, maintenanceMode, platformName, refreshSystem } = useSystem();
@@ -25,11 +27,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         if (data.authenticated && data.user) {
           setCurrentUser(data.user);
           setIsOwner(data.isOwner || data.user.role === "OWNER");
+        } else {
+          const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+          router.replace(`/auth/login?redirect=${redirect}`);
         }
       })
-      .catch(() => null)
+      .catch(() => {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        router.replace(`/auth/login?redirect=${redirect}`);
+      })
       .finally(() => setCheckingAuth(false));
-  }, []);
+  }, [router]);
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex items-center justify-center p-6 font-mono">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-500/20 animate-pulse">
+            <RefreshCw className="w-5 h-5 animate-spin" />
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold tracking-wide">
+            Verifying Merchant Credentials...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return null;
+  }
 
   // 1. Account Suspension Screen (Enforced when Owner suspends user in /owner/users)
   if (currentUser?.isSuspended && !isOwner) {

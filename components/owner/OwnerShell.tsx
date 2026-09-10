@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import {
   Menu,
@@ -20,9 +21,28 @@ interface OwnerShellProps {
 }
 
 export function OwnerShell({ children }: OwnerShellProps) {
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
   const [lockdownActive, setLockdownActive] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.isOwner) {
+          setIsAuthorized(true);
+        } else {
+          router.replace("/owner/login");
+        }
+      })
+      .catch(() => {
+        router.replace("/owner/login");
+      })
+      .finally(() => setCheckingAuth(false));
+  }, [router]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -33,6 +53,25 @@ export function OwnerShell({ children }: OwnerShellProps) {
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-center font-mono">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-xl shadow-amber-500/10 animate-pulse">
+            <Shield className="w-6 h-6 animate-pulse" />
+          </div>
+          <p className="text-xs font-mono text-slate-400 font-semibold tracking-wider uppercase">
+            Verifying Owner Cryptographic Authorization...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100">

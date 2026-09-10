@@ -3,13 +3,14 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shield, Lock, KeyRound, ArrowRight, CheckCircle2, AlertTriangle, Terminal } from "lucide-react";
+import { Shield, Lock, KeyRound, ArrowRight, CheckCircle2, AlertTriangle, Terminal, Eye, EyeOff } from "lucide-react";
 
 export default function OwnerLoginPage() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [requiresMfa, setRequiresMfa] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -180,13 +181,22 @@ export default function OwnerLoginPage() {
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-600"
+                  className="w-full pl-10 pr-11 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-600"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -214,17 +224,15 @@ export default function OwnerLoginPage() {
                 <label className="block text-xs font-semibold text-slate-300">
                   Authentication Code
                 </label>
-                <span className="text-[10px] text-amber-400 font-mono">
-                  Default TOTP: 998822
-                </span>
               </div>
               <input
                 type="text"
                 required
                 autoFocus
+                autoComplete="one-time-code"
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value.trim())}
-                placeholder="998822"
+                placeholder="••••••"
                 maxLength={32}
                 className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-center font-mono text-lg tracking-wider text-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-700"
               />

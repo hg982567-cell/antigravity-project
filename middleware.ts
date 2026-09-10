@@ -11,7 +11,20 @@ export function middleware(request: NextRequest) {
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  // Protect Owner Control Center routes (/owner/*)
+  // 1. Protect Merchant App routes (/app/*)
+  if (pathname.startsWith("/app")) {
+    const sessionToken = request.cookies.get("dropai_session_token")?.value;
+    const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
+
+    if (!sessionToken && !ownerToken) {
+      const loginUrl = new URL("/auth/login", request.url);
+      const redirectTarget = pathname + (request.nextUrl.search || "");
+      loginUrl.searchParams.set("redirect", redirectTarget);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 2. Protect Owner Control Center routes (/owner/*)
   if (pathname.startsWith("/owner")) {
     // Permit access to /owner/login
     if (pathname === "/owner/login") {
@@ -26,7 +39,20 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Protect Owner API routes (/api/owner/*)
+  // 3. Protect Merchant App API routes (/api/app/*)
+  if (pathname.startsWith("/api/app")) {
+    const sessionToken = request.cookies.get("dropai_session_token")?.value;
+    const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
+
+    if (!sessionToken && !ownerToken) {
+      return NextResponse.json(
+        { error: "Access Denied: Authentication Required" },
+        { status: 401 }
+      );
+    }
+  }
+
+  // 4. Protect Owner API routes (/api/owner/*)
   if (pathname.startsWith("/api/owner")) {
     const isPublicAuthRoute =
       pathname === "/api/owner/auth/verify-email" ||

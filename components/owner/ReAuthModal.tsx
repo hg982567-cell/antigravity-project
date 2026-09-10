@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { Lock, ShieldAlert, KeyRound, AlertTriangle } from "lucide-react";
+import { Lock, ShieldAlert, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
 
 interface ReAuthModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ export function ReAuthModal({
   isDestructive = false,
 }: ReAuthModalProps) {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -86,13 +87,22 @@ export function ReAuthModal({
             <div className="relative">
               <Lock className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter current Owner password"
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-500"
+                className="w-full pl-9 pr-9 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-500"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
             </div>
           </div>
 
