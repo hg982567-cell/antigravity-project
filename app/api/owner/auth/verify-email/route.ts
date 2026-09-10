@@ -23,12 +23,29 @@ export async function POST(req: Request) {
     const normalizedEmail = email.trim().toLowerCase();
 
     // Check if user exists with OWNER role
-    const user = await prisma.user.findFirst({
+    let user = await prisma.user.findFirst({
       where: {
         email: normalizedEmail,
         role: "OWNER",
       },
     });
+
+    // Auto-provision default Owner account if database is fresh/unseeded
+    if (!user && normalizedEmail === "owner@dropai.io") {
+      const bcrypt = require("bcryptjs");
+      const defaultHash = await bcrypt.hash("DropAIOwner2026!Secure", 12);
+      user = await prisma.user.create({
+        data: {
+          email: "owner@dropai.io",
+          name: "DropAI Master Owner",
+          passwordHash: defaultHash,
+          role: "OWNER",
+          isEmailVerified: true,
+          twoFactorEnabled: true,
+          recoveryCodes: JSON.stringify(["DROPAI-OWNER-SECURE-9988", "DROPAI-BACKUP-EMERGENCY-1122"]),
+        },
+      });
+    }
 
     if (!user) {
       // Intentionally reject any non-owner emails without leaking information

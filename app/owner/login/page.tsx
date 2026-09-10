@@ -56,9 +56,10 @@ export default function OwnerLoginPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        if (data.requiresMfa) {
+        if (data.requiresMfa && step === 2) {
+          setError("");
           setStep(3);
-          throw new Error("Two-Factor Authentication required.");
+          return;
         }
         throw new Error(data.error || "Authentication failed.");
       }
@@ -208,18 +209,23 @@ export default function OwnerLoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Authentication Code
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Authentication Code
+                </label>
+                <span className="text-[10px] text-amber-400 font-mono">
+                  Default TOTP: 998822
+                </span>
+              </div>
               <input
                 type="text"
                 required
                 autoFocus
                 value={mfaCode}
-                onChange={(e) => setMfaCode(e.target.value)}
-                placeholder="000000"
-                maxLength={10}
-                className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-center font-mono text-xl tracking-widest text-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-700"
+                onChange={(e) => setMfaCode(e.target.value.trim())}
+                placeholder="998822"
+                maxLength={32}
+                className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-center font-mono text-lg tracking-wider text-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-700"
               />
             </div>
 

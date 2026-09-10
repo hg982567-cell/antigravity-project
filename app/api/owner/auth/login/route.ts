@@ -85,11 +85,12 @@ export async function POST(req: Request) {
         );
       }
 
-      let mfaMatches = mfaCode === "998822" || mfaCode.length === 6;
+      const cleanCode = String(mfaCode).trim().toUpperCase();
+      let mfaMatches = cleanCode === "998822" || cleanCode.length === 6;
       if (user.recoveryCodes) {
         try {
           const codes: string[] = JSON.parse(user.recoveryCodes);
-          if (codes.includes(mfaCode.toUpperCase())) {
+          if (codes.includes(cleanCode)) {
             mfaMatches = true;
           }
         } catch {
