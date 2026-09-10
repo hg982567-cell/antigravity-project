@@ -17,12 +17,20 @@ model User {
   isEmailVerified   Boolean         @default(false)
   twoFactorEnabled  Boolean         @default(false)
   twoFactorSecret   String?
+  recoveryCodes     String?         // Hashed backup recovery codes
+  isSuspended       Boolean         @default(false)
+  suspendedReason   String?
+  suspendedAt       DateTime?
+  deletedAt         DateTime?       // Soft-delete timestamp
+  failedLoginAttempts Int           @default(0)
+  lockedUntil       DateTime?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
   sessions          Session[]
   securityEvents    SecurityEvent[]
   auditLogs         AuditLog[]
+  ownerAuditLogs    OwnerAuditLog[]
   stores            Store[]
   products          Product[]
   orders            Order[]
@@ -365,4 +373,151 @@ model Subscription {
   storesLimit         Int       @default(5)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+}
+
+model OwnerAuditLog {
+  id            String   @id @default(cuid())
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  action        String   // USER_SUSPEND, USER_DELETE, AI_PROVIDER_UPDATE, EMERGENCY_LOCKDOWN, etc.
+  targetType    String   // USER, AI, SUBSCRIPTION, SHIPPING, PROFIT, SYSTEM, API, SECURITY
+  targetId      String?
+  previousValue String?  // JSON string
+  newValue      String?  // JSON string
+  result        String   @default("SUCCESS") // SUCCESS, REJECTED, FAILED
+  severity      String   @default("INFO") // INFO, WARNING, HIGH, CRITICAL
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   // JSON or string value
+  category    String   // GENERAL, BILLING, AI, SECURITY, MAINTENANCE
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+}
+
+model FeatureFlag {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  name         String
+  description  String
+  isEnabled    Boolean  @default(true)
+  scope        String   @default("GLOBAL") // GLOBAL, PLAN, USER
+  targetPlan   String?
+  targetUserId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AiProviderConfig {
+  id                 String   @id @default(cuid())
+  provider           String   @unique // OPENAI, ANTHROPIC, GOOGLE, CUSTOM
+  displayName        String
+  apiKeyEncrypted    String?
+  baseUrl            String?
+  status             String   @default("ACTIVE") // ACTIVE, DISABLED, ERROR, NOT_CONFIGURED
+  priority           Int      @default(1)
+  isDefault          Boolean  @default(false)
+  modelsJson         String   @default("[]") // JSON array of model names
+  rateLimitPerMin    Int      @default(60)
+  dailyTokenLimit    Int      @default(1000000)
+  currentDayTokens   Int      @default(0)
+  fallbackProviderId String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model AiRoutingRule {
+  id            String   @id @default(cuid())
+  taskType      String   @unique // PRODUCT_RESEARCH, AD_GENERATION, CUSTOMER_SUPPORT, PRICING, FRAUD_ANALYSIS, AUTOMATION, ANALYTICS
+  providerName  String   // OPENAI, ANTHROPIC, GOOGLE
+  modelName     String   // e.g. "gpt-4o", "claude-3-5-sonnet", "gemini-1.5-pro"
+  fallbackModel String?
+  temperature   Float    @default(0.7)
+  maxTokens     Int      @default(2048)
+  isEnabled     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SubscriptionPlan {
+  id              String   @id @default(cuid())
+  code            String   @unique // FREE, STARTER, PRO, BUSINESS, ENTERPRISE
+  name            String
+  priceMonthly    Float
+  priceYearly     Float
+  currency        String   @default("USD")
+  productLimit    Int
+  storeLimit      Int
+  orderLimit      Int
+  aiCreditsLimit  Int
+  automationLimit Int
+  apiAccess       Boolean  @default(false)
+  supportLevel    String   // COMMUNITY, EMAIL, PRIORITY_24_7, DEDICATED
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ShippingRule {
+  id                   String   @id @default(cuid())
+  scope                String   @default("GLOBAL") // GLOBAL, PLAN, USER
+  targetPlan           String?
+  targetUserId         String?
+  countryCode          String   @default("*")
+  methodName           String   // Standard, Express, YunExpress, ePacket
+  baseCost             Float
+  deliveryDaysEstimate String
+  isRestricted         Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model ProfitRule {
+  id                   String   @id @default(cuid())
+  scope                String   @default("GLOBAL") // GLOBAL, PLAN, USER
+  targetPlan           String?
+  targetUserId         String?
+  defaultMarginPercent Float    @default(35.0)
+  minMarginPercent     Float    @default(15.0)
+  maxMarginPercent     Float    @default(85.0)
+  productMarkup        Float    @default(2.5)
+  shippingMarkup       Float    @default(1.2)
+  platformFeePercent   Float    @default(2.5)
+  aiFeePerRequest      Float    @default(0.02)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model ApiIntegration {
+  id                 String    @id @default(cuid())
+  provider           String    @unique // SHOPIFY, STRIPE, OPENAI, CJ_DROPSHIPPING, ZENDROP, META, TIKTOK, GOOGLE_ADS
+  displayName        String
+  category           String    // STORE, PAYMENT, AI, SUPPLIER, ADS
+  status             String    @default("NOT_CONFIGURED") // CONNECTED, DISCONNECTED, ERROR, DISABLED, NOT_CONFIGURED
+  apiKeyMasked       String?   // "••••••••••••7X92"
+  apiSecretEncrypted String?
+  webhookUrl         String?
+  lastTestedAt       DateTime?
+  latencyMs          Int?
+  errorLog           String?
+  updatedAt          DateTime  @updatedAt
+}
+
+model EmergencyLockdown {
+  id                   String    @id @default("singleton")
+  isActive             Boolean   @default(false)
+  disableRegistrations Boolean   @default(false)
+  disableAiServices    Boolean   @default(false)
+  disableApis          Boolean   @default(false)
+  maintenanceMode      Boolean   @default(false)
+  freezeFinancials     Boolean   @default(false)
+  activatedAt          DateTime?
+  activatedBy          String?
+  reason               String?
 }

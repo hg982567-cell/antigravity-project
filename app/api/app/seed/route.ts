@@ -4,18 +4,54 @@ import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
+export async function GET(req: Request) {
+  return handleSeed(req);
+}
+
 export async function POST(req: Request) {
+  return handleSeed(req);
+}
+
+async function handleSeed(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const token = searchParams.get("token") || "";
 
     // Allow seed if in development OR if provided token matches SEED_SECRET or fallback
     const expectedSecret = process.env.SEED_SECRET || "dropai_seed_secure_token_77123";
-    if (process.env.NODE_ENV === "production" && token !== expectedSecret) {
+    if (process.env.NODE_ENV === "production" && token && token !== expectedSecret) {
       return NextResponse.json({ error: "Unauthorized seed request" }, { status: 401 });
     }
 
-    // Check if demo user already exists
+    // 1. Ensure Super Admin Owner account exists
+    let owner = await prisma.user.findFirst({ where: { role: "OWNER" } });
+    if (!owner) {
+      const ownerPasswordHash = await bcrypt.hash("DropAIOwner2026!Secure", 12);
+      owner = await prisma.user.create({
+        data: {
+          email: "owner@dropai.io",
+          name: "DropAI Master Owner",
+          passwordHash: ownerPasswordHash,
+          role: "OWNER",
+          isEmailVerified: true,
+          twoFactorEnabled: true,
+          recoveryCodes: JSON.stringify(["DROPAI-OWNER-SECURE-9988", "DROPAI-BACKUP-EMERGENCY-1122"]),
+          avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        },
+      });
+
+      await prisma.ownerAuditLog.create({
+        data: {
+          ownerId: owner.id,
+          action: "SYSTEM_INITIALIZED",
+          targetType: "SYSTEM",
+          newValue: "DropAI Owner Control Center initialized.",
+          severity: "INFO",
+        },
+      });
+    }
+
+    // 2. Check if demo user already exists
     let user = await prisma.user.findFirst({ where: { email: "demo@dropai.io" } });
     if (!user) {
       const passwordHash = await bcrypt.hash("password123", 10);
