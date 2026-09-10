@@ -16,6 +16,26 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check system settings: public registration & maintenance mode
+    const [regSetting, maintenanceSetting] = await Promise.all([
+      prisma.systemSetting.findUnique({ where: { key: "public_registration_enabled" } }),
+      prisma.systemSetting.findUnique({ where: { key: "maintenance_mode" } }),
+    ]);
+
+    if (regSetting?.value === "false") {
+      return NextResponse.json(
+        { error: "Public merchant registration is temporarily closed by the platform administrator." },
+        { status: 403 }
+      );
+    }
+
+    if (maintenanceSetting?.value === "true") {
+      return NextResponse.json(
+        { error: "DropAI is currently in Maintenance Mode for scheduled infrastructure optimization." },
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
     const { email, password, name } = body;
 

@@ -13,9 +13,14 @@ import {
   Sliders,
   Layers,
   ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
+import Link from "next/link";
+import { useSystem } from "@/components/providers/SystemContext";
 
 export default function CreativeStudioPage() {
+  const { isFeatureEnabled } = useSystem();
+  const featureEnabled = isFeatureEnabled("ai_ad_creative_studio");
   const [productName, setProductName] = useState("Self-Cleaning Pet Steam Brush");
   const [targetAudience, setTargetAudience] = useState("Dog & Cat Owners (US/UK)");
   const [platform, setPlatform] = useState("TIKTOK");
@@ -79,6 +84,21 @@ export default function CreativeStudioPage() {
           </p>
         </div>
       </div>
+
+      {!featureEnabled && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
+            <div>
+              <p className="font-bold text-white">AI Creative Studio Temporarily Disabled by Platform Owner</p>
+              <p className="text-slate-400 text-[11px] mt-0.5">Automated copy generation is turned off in Owner System Settings. Pre-generated samples remain available.</p>
+            </div>
+          </div>
+          <Link href="/owner/system" className="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[11px] font-bold shrink-0 ml-3">
+            Owner Controls →
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Input Form */}

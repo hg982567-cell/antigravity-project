@@ -59,6 +59,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // 4. Check account deactivation / soft-delete
+    if (user.deletedAt) {
+      return NextResponse.json(
+        { error: "This account has been deactivated. Please contact support." },
+        { status: 403 }
+      );
+    }
+
+    // 5. Check account suspension (from /owner/users)
+    if (user.isSuspended) {
+      return NextResponse.json(
+        { error: `Account suspended: ${user.suspendedReason || "Administrative hold by Platform Owner."}` },
+        { status: 403 }
+      );
+    }
+
+    // 6. Check platform maintenance mode
+    const maintenanceSetting = await prisma.systemSetting.findUnique({ where: { key: "maintenance_mode" } });
+    if (maintenanceSetting?.value === "true" && user.role !== "OWNER") {
+      return NextResponse.json(
+        { error: "DropAI is currently in Maintenance Mode for scheduled infrastructure optimization. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
     // 4. If 2FA enabled, prompt for 2FA step
     if (user.twoFactorEnabled) {
       return NextResponse.json({

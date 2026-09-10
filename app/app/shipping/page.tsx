@@ -20,6 +20,7 @@ import {
 export default function ShippingPage() {
   const { isDemoMode } = useDemo();
   const [shipments, setShipments] = useState<any[]>([]);
+  const [shippingRules, setShippingRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTrackingModal, setActiveTrackingModal] = useState<any | null>(null);
@@ -28,9 +29,14 @@ export default function ShippingPage() {
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/app/data?type=shipping&demo=${isDemoMode}`);
-        const data = await res.json();
+        const [shipRes, rulesRes] = await Promise.all([
+          fetch(`/api/app/data?type=shipping&demo=${isDemoMode}`),
+          fetch(`/api/app/data?type=shipping_rules`),
+        ]);
+        const data = await shipRes.json();
+        const rulesData = await rulesRes.json();
         setShipments(data.shipments || []);
+        setShippingRules(rulesData.rules || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -64,7 +70,7 @@ export default function ShippingPage() {
         </div>
       </div>
 
-      <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+      <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
         <div className="relative w-full max-w-sm">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -75,7 +81,37 @@ export default function ShippingPage() {
             className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
           />
         </div>
+        <Link href="/owner/shipping" className="text-[11px] font-mono font-bold text-amber-500 hover:underline shrink-0">
+          Owner Shipping Rules →
+        </Link>
       </div>
+
+      {/* Live Carrier Rates Configured by Owner */}
+      {shippingRules.length > 0 && (
+        <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold font-mono text-slate-700 dark:text-slate-300 uppercase flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-blue-500" />
+              Active Platform Carrier Rates & Routing (Configured by Platform Owner)
+            </h3>
+            <span className="text-[10px] font-mono text-slate-400">{shippingRules.length} Active Carrier Protocols</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {shippingRules.slice(0, 3).map((r) => (
+              <div key={r.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white truncate">{r.methodName}</span>
+                  <Badge variant="info" size="sm">{r.countryCode || "Global"}</Badge>
+                </div>
+                <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                  <span>Base Cost: <strong className="text-emerald-500 font-mono">${r.baseCost?.toFixed(2)}</strong></span>
+                  <span>{r.deliveryDaysEstimate}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-0">

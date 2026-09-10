@@ -5,16 +5,44 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const lockdown = await prisma.emergencyLockdown.findFirst({
-      where: { isActive: true },
+    const [lockdown, flags, settings, plans] = await Promise.all([
+      prisma.emergencyLockdown.findFirst({ where: { isActive: true } }),
+      prisma.featureFlag.findMany(),
+      prisma.systemSetting.findMany(),
+      prisma.subscriptionPlan.findMany({
+        where: { isActive: true },
+        orderBy: { priceMonthly: "asc" },
+      }),
+    ]);
+
+    const featureFlagsMap: Record<string, boolean> = {};
+    flags.forEach((f) => {
+      featureFlagsMap[f.key] = f.isEnabled;
     });
+
+    const settingsMap: Record<string, string> = {};
+    settings.forEach((s) => {
+      settingsMap[s.key] = s.value;
+    });
+
+    const maintenanceMode = settingsMap["maintenance_mode"] === "true";
+    const platformName = settingsMap["platform_name"] || "DropAI Platform";
 
     return NextResponse.json({
       lockdownActive: !!lockdown,
-      reason: lockdown?.reason || null,
-      activatedAt: lockdown?.activatedAt || null,
+      lockdownReason: lockdown?.reason || null,
+      maintenanceMode,
+      platformName,
+      featureFlags: featureFlagsMap,
+      settings: settingsMap,
+      plans,
     });
   } catch {
-    return NextResponse.json({ lockdownActive: false }, { status: 200 });
+    return NextResponse.json({
+      lockdownActive: false,
+      maintenanceMode: false,
+      featureFlags: {},
+      settings: {},
+    }, { status: 200 });
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
@@ -12,12 +12,38 @@ import {
   ShieldCheck,
   ArrowRight,
   Zap,
+  RefreshCw,
 } from "lucide-react";
 
 export default function BillingPage() {
-  const [currentPlan, setCurrentPlan] = useState("PRO");
+  const [billingData, setBillingData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null);
+
+  const fetchBilling = async () => {
+    try {
+      const res = await fetch("/api/app/data?type=billing");
+      const data = await res.json();
+      setBillingData(data);
+    } catch (err) {
+      console.error("Billing fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBilling();
+  }, []);
+
+  const currentPlan = billingData?.plan || "PRO";
+  const plans = billingData?.plans || [];
+  const aiRemaining = billingData?.aiCreditsRemaining ?? 4820;
+  const aiTotal = billingData?.aiCreditsTotal ?? 5000;
+  const aiPercent = Math.min(100, Math.round((aiRemaining / Math.max(1, aiTotal)) * 100));
+  const ordersCount = billingData?.ordersProcessedCount ?? 6;
+  const storesCount = billingData?.connectedStoresCount ?? 2;
 
   const invoices = [
     { id: "INV-2026-009", date: "Sep 1, 2026", amount: "$79.00", status: "PAID", pdf: "invoice_sep26.pdf" },
@@ -25,15 +51,24 @@ export default function BillingPage() {
     { id: "INV-2026-007", date: "Jul 1, 2026", amount: "$79.00", status: "PAID", pdf: "invoice_jul26.pdf" },
   ];
 
-  const handleUpgrade = (plan: string) => {
-    setSelectedUpgrade(plan);
+  const handleUpgrade = (planCode: string) => {
+    setSelectedUpgrade(planCode);
     setUpgradeModalOpen(true);
   };
 
-  const confirmUpgrade = () => {
+  const confirmUpgrade = async () => {
     if (selectedUpgrade) {
-      setCurrentPlan(selectedUpgrade);
-      setUpgradeModalOpen(false);
+      try {
+        await fetch("/api/app/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "change_plan", plan: selectedUpgrade }),
+        });
+        setUpgradeModalOpen(false);
+        fetchBilling();
+      } catch (err) {
+        console.error("Failed to change plan:", err);
+      }
     }
   };
 
@@ -52,9 +87,17 @@ export default function BillingPage() {
             </Badge>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Track your AI token consumption, automated order thresholds, and connected storefront limits.
+            Live tier allocations controlled via the DropAI Master Admin Center.
           </p>
         </div>
+
+        <button
+          onClick={fetchBilling}
+          className="self-start px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 transition-colors"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-500" : ""}`} />
+          <span>Sync Plan</span>
+        </button>
       </div>
 
       {/* Usage Gauges */}
@@ -63,12 +106,17 @@ export default function BillingPage() {
           <CardContent className="p-5 space-y-2">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-slate-500">AI Credits Balance</span>
-              <span className="font-bold text-slate-900 dark:text-white font-mono">4,820 / 5,000</span>
+              <span className="font-bold text-slate-900 dark:text-white font-mono">
+                {aiRemaining.toLocaleString()} / {aiTotal.toLocaleString()}
+              </span>
             </div>
             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full w-[96%]" />
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all"
+                style={{ width: `${aiPercent}%` }}
+              />
             </div>
-            <p className="text-[11px] text-slate-400">Renews on Oct 1, 2026</p>
+            <p className="text-[11px] text-slate-400">Renews monthly with active tier</p>
           </CardContent>
         </Card>
 
@@ -76,12 +124,14 @@ export default function BillingPage() {
           <CardContent className="p-5 space-y-2">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-slate-500">Orders Processed</span>
-              <span className="font-bold text-slate-900 dark:text-white font-mono">142 / 5,000</span>
+              <span className="font-bold text-slate-900 dark:text-white font-mono">
+                {ordersCount} Live Orders
+              </span>
             </div>
             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full w-[3%]" />
+              <div className="h-full bg-emerald-500 rounded-full w-[12%]" />
             </div>
-            <p className="text-[11px] text-slate-400">Unlimited manual orders</p>
+            <p className="text-[11px] text-slate-400">Automated 3PL routing active</p>
           </CardContent>
         </Card>
 
@@ -89,78 +139,94 @@ export default function BillingPage() {
           <CardContent className="p-5 space-y-2">
             <div className="flex justify-between text-xs">
               <span className="font-semibold text-slate-500">Connected Stores</span>
-              <span className="font-bold text-slate-900 dark:text-white font-mono">2 / 5 Stores</span>
+              <span className="font-bold text-slate-900 dark:text-white font-mono">
+                {storesCount} Stores Active
+              </span>
             </div>
             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
               <div className="h-full bg-purple-500 rounded-full w-[40%]" />
             </div>
-            <p className="text-[11px] text-slate-400">3 slots available</p>
+            <p className="text-[11px] text-slate-400">Shopify & WooCommerce synchronized</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Plan Details & Upgrade Action */}
+      {/* Plan Details & Dynamic DB Plans */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Available Plan Upgrades</CardTitle>
+          <CardTitle className="text-sm">Available Platform Plans (Managed by Admin)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Starter</h3>
-                <p className="text-xl font-bold font-mono text-slate-900 dark:text-white mt-2">$29 <span className="text-xs text-slate-500 font-normal">/ mo</span></p>
-                <ul className="mt-3 space-y-1.5 text-slate-500">
-                  <li>• 1 Connected Store</li>
-                  <li>• 200 Automated Orders</li>
-                </ul>
-              </div>
-              <button
-                disabled={currentPlan === "STARTER"}
-                onClick={() => handleUpgrade("STARTER")}
-                className="mt-4 w-full py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold disabled:opacity-50"
-              >
-                {currentPlan === "STARTER" ? "Current Plan" : "Downgrade"}
-              </button>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            {plans.map((p: any) => {
+              const isCurrent = p.code.toUpperCase() === currentPlan.toUpperCase();
+              return (
+                <div
+                  key={p.id}
+                  className={`p-5 rounded-2xl border flex flex-col justify-between relative transition-all ${
+                    isCurrent
+                      ? "border-2 border-blue-600 bg-blue-50/20 dark:bg-blue-950/20 shadow-lg"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40"
+                  }`}
+                >
+                  {isCurrent && (
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-bold tracking-wider">
+                      CURRENT ACTIVE PLAN
+                    </span>
+                  )}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white">{p.name}</h3>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
+                        {p.code}
+                      </span>
+                    </div>
 
-            <div className="p-4 rounded-xl border-2 border-blue-600 bg-blue-50/20 dark:bg-blue-950/20 flex flex-col justify-between relative shadow-sm">
-              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-bold">
-                ACTIVE PLAN
-              </span>
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Pro Merchant</h3>
-                <p className="text-xl font-bold font-mono text-slate-900 dark:text-white mt-2">$79 <span className="text-xs text-slate-500 font-normal">/ mo</span></p>
-                <ul className="mt-3 space-y-1.5 text-slate-600 dark:text-slate-300">
-                  <li>• 5 Connected Stores</li>
-                  <li>• 5,000 Automated Orders</li>
-                  <li>• AI Creative Studio & Radar</li>
-                </ul>
-              </div>
-              <button
-                disabled
-                className="mt-4 w-full py-1.5 rounded-lg bg-blue-600 text-white font-semibold cursor-default"
-              >
-                Current Plan
-              </button>
-            </div>
+                    <p className="text-2xl font-black font-mono text-slate-900 dark:text-white mt-3">
+                      ${p.priceMonthly.toLocaleString()}
+                      <span className="text-xs text-slate-500 font-normal"> / mo</span>
+                    </p>
 
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Enterprise Scale</h3>
-                <p className="text-xl font-bold font-mono text-slate-900 dark:text-white mt-2">$199 <span className="text-xs text-slate-500 font-normal">/ mo</span></p>
-                <ul className="mt-3 space-y-1.5 text-slate-500">
-                  <li>• Unlimited Stores</li>
-                  <li>• Unlimited Orders & 3PL Lines</li>
-                </ul>
-              </div>
-              <button
-                onClick={() => handleUpgrade("ENTERPRISE")}
-                className="mt-4 w-full py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-              >
-                Upgrade Plan
-              </button>
-            </div>
+                    <ul className="mt-4 space-y-2 text-slate-600 dark:text-slate-300">
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span>Up to <strong>{p.storeLimit}</strong> Connected Store{p.storeLimit > 1 ? "s" : ""}</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span><strong>{p.orderLimit.toLocaleString()}</strong> Automated Orders / mo</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span><strong>{p.aiCreditsLimit.toLocaleString()}</strong> AI Inference Credits</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span><strong>{p.productLimit.toLocaleString()}</strong> Catalog SKUs</span>
+                      </li>
+                      {p.apiAccess && (
+                        <li className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          <span>Direct API & Webhook Access</span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+
+                  <button
+                    disabled={isCurrent}
+                    onClick={() => handleUpgrade(p.code)}
+                    className={`mt-5 w-full py-2 rounded-xl text-xs font-bold transition-all ${
+                      isCurrent
+                        ? "bg-blue-600 text-white cursor-default shadow-md"
+                        : "border border-slate-300 dark:border-slate-700 hover:bg-blue-600 hover:text-white text-slate-800 dark:text-slate-200"
+                    }`}
+                  >
+                    {isCurrent ? "Active Plan" : `Switch to ${p.name}`}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

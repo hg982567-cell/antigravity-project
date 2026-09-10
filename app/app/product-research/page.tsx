@@ -19,13 +19,18 @@ import {
   PlusCircle,
   ExternalLink,
   CheckCircle2,
+  ShieldAlert,
+  Percent,
 } from "lucide-react";
+import { useSystem } from "@/components/providers/SystemContext";
 
 export default function ProductResearchPage() {
   const { isDemoMode } = useDemo();
   const { formatPrice } = useCurrency();
+  const { isFeatureEnabled } = useSystem();
 
   const [products, setProducts] = useState<any[]>([]);
+  const [profitRules, setProfitRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -37,9 +42,14 @@ export default function ProductResearchPage() {
     async function loadProducts() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/app/data?type=products&demo=${isDemoMode}`);
-        const data = await res.json();
-        setProducts(data.products || []);
+        const [prodRes, rulesRes] = await Promise.all([
+          fetch(`/api/app/data?type=products&demo=${isDemoMode}`),
+          fetch(`/api/app/data?type=pricing_rules`),
+        ]);
+        const prodData = await prodRes.json();
+        const rulesData = await rulesRes.json();
+        setProducts(prodData.products || []);
+        setProfitRules(rulesData.rules || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -64,6 +74,9 @@ export default function ProductResearchPage() {
       setSelectedProduct(null);
     }, 1200);
   };
+
+  const featureEnabled = isFeatureEnabled("ai_product_research");
+  const activeProfitRule = profitRules[0];
 
   return (
     <div className="space-y-6">
@@ -101,6 +114,40 @@ export default function ProductResearchPage() {
           </select>
         </div>
       </div>
+
+      {/* Feature Flag Disabled Banner */}
+      {!featureEnabled && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
+            <div>
+              <p className="font-bold text-white">AI Opportunity Radar Temporarily Disabled by Platform Owner</p>
+              <p className="text-slate-400 text-[11px] mt-0.5">The platform administrator has turned off automated neural product scoring. Showing cached catalog.</p>
+            </div>
+          </div>
+          <Link href="/owner/system" className="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[11px] font-bold shrink-0 ml-3">
+            Owner Controls →
+          </Link>
+        </div>
+      )}
+
+      {/* Live Platform Profit Rules configured by Owner */}
+      {activeProfitRule && (
+        <div className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+            <Percent className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Owner Configured Profit Engine:</span>
+            <strong className="text-slate-900 dark:text-white">{activeProfitRule.productMarkup || 2.5}x Markup</strong>
+            <span>•</span>
+            <strong className="text-slate-900 dark:text-white">{activeProfitRule.minMarginPercent || 20}% Min Margin</strong>
+            <span>•</span>
+            <strong className="text-slate-900 dark:text-white">{activeProfitRule.platformFeePercent || 2.5}% Platform Fee</strong>
+          </div>
+          <Link href="/owner/profit" className="text-[11px] font-mono text-blue-500 hover:underline">
+            Manage Profit Rules →
+          </Link>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">

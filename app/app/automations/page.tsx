@@ -15,10 +15,15 @@ import {
   ArrowRight,
   ShieldCheck,
   AlertTriangle,
+  ShieldAlert,
 } from "lucide-react";
+import Link from "next/link";
+import { useSystem } from "@/components/providers/SystemContext";
 
 export default function AutomationsPage() {
   const { isDemoMode } = useDemo();
+  const { isFeatureEnabled } = useSystem();
+  const autoFulfillEnabled = isFeatureEnabled("order_auto_fulfillment");
   const [automations, setAutomations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -74,6 +79,21 @@ export default function AutomationsPage() {
           </p>
         </div>
       </div>
+
+      {!autoFulfillEnabled && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
+            <div>
+              <p className="font-bold text-white">Autonomous Order Routing Disabled by Platform Owner</p>
+              <p className="text-slate-400 text-[11px] mt-0.5">Automated supplier dispatch is turned off in Owner System Settings. Automated webhooks are running in dry-run mode.</p>
+            </div>
+          </div>
+          <Link href="/owner/system" className="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[11px] font-bold shrink-0 ml-3">
+            Owner Controls →
+          </Link>
+        </div>
+      )}
 
       {testSuccess && (
         <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">

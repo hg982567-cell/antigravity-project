@@ -13,9 +13,38 @@ export async function GET(req: Request) {
     const user = await getCurrentUser();
     let userId = user?.id;
 
+    if (user?.isSuspended) {
+      return NextResponse.json(
+        {
+          error: "ACCOUNT_SUSPENDED",
+          isSuspended: true,
+          suspendedReason: user.suspendedReason || "Account suspended by Platform Administrator.",
+        },
+        { status: 403 }
+      );
+    }
+
+    let isAccountSuspended = false;
+    let suspendedReason = "";
+
     if (isDemo || !userId) {
       const demoUser = await prisma.user.findFirst({ where: { email: "demo@dropai.io" } });
       userId = demoUser?.id;
+      if (demoUser?.isSuspended) {
+        isAccountSuspended = true;
+        suspendedReason = demoUser.suspendedReason || "Demo merchant account has been suspended by Platform Administrator.";
+      }
+    }
+
+    if (isAccountSuspended) {
+      return NextResponse.json(
+        {
+          error: "ACCOUNT_SUSPENDED",
+          isSuspended: true,
+          suspendedReason,
+        },
+        { status: 403 }
+      );
     }
 
     if (!userId) {
@@ -165,6 +194,43 @@ export async function GET(req: Request) {
       return NextResponse.json({ sessions, events });
     }
 
+    if (type === "billing") {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { subscription: true, stores: true, orders: true },
+      });
+
+      const plans = await prisma.subscriptionPlan.findMany({
+        where: { isActive: true },
+        orderBy: { priceMonthly: "asc" },
+      });
+
+      return NextResponse.json({
+        plan: userRecord?.subscription?.plan || "PRO",
+        status: userRecord?.subscription?.status || "ACTIVE",
+        aiCreditsRemaining: userRecord?.subscription?.aiCreditsRemaining ?? 4820,
+        aiCreditsTotal: userRecord?.subscription?.aiCreditsTotal ?? 5000,
+        ordersProcessedCount: userRecord?.orders?.length || 142,
+        connectedStoresCount: userRecord?.stores?.length || 2,
+        plans,
+      });
+    }
+
+    if (type === "pricing_rules") {
+      const rules = await prisma.profitRule.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+      return NextResponse.json({ rules });
+    }
+
+    if (type === "shipping_rules") {
+      const rules = await prisma.shippingRule.findMany({
+        where: { isRestricted: false },
+        orderBy: { createdAt: "desc" },
+      });
+      return NextResponse.json({ rules });
+    }
+
     return NextResponse.json({ error: "Unknown data type" }, { status: 400 });
   } catch (error) {
     console.error("App data API error:", error);
@@ -188,6 +254,31 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { action } = body;
+    // 0. Update User Subscription Plan
+    if (action === "change_plan") {
+      const { plan } = body;
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          subscription: {
+            upsert: {
+              create: {
+                plan: plan || "PRO",
+                status: "ACTIVE",
+                aiCreditsRemaining: 10000,
+                aiCreditsTotal: 10000,
+                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              },
+              update: {
+                plan: plan || "PRO",
+                status: "ACTIVE",
+              },
+            },
+          },
+        },
+      });
+      return NextResponse.json({ success: true, plan });
+    }
 
     // 1. Create Real Product
     if (action === "create_product") {

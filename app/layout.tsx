@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { CurrencyProvider } from "@/components/providers/CurrencyContext";
 import { DemoProvider } from "@/components/providers/DemoContext";
+import { SystemProvider } from "@/components/providers/SystemContext";
 
 export const metadata: Metadata = {
   title: "DropAI — Autonomous Dropshipping & Ecommerce Intelligence",
@@ -20,7 +21,9 @@ export default function RootLayout({
         <ThemeProvider>
           <CurrencyProvider>
             <DemoProvider>
-              {children}
+              <SystemProvider>
+                {children}
+              </SystemProvider>
             </DemoProvider>
           </CurrencyProvider>
         </ThemeProvider>

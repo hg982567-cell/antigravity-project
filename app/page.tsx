@@ -21,7 +21,13 @@ import {
   Sliders,
 } from "lucide-react";
 
-export default function HomePage() {
+import { prisma } from "@/lib/prisma";
+
+export default async function HomePage() {
+  const dbPlans = await prisma.subscriptionPlan.findMany({
+    where: { isActive: true },
+    orderBy: { priceMonthly: "asc" },
+  }).catch(() => []);
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#090d16]">
       {/* 1. Navigation */}
@@ -416,69 +422,103 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Starter</h3>
-                <p className="text-xs text-slate-500 mt-1">For new merchants testing their first product</p>
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">$29</span>
-                  <span className="text-xs text-slate-500">/ month</span>
+            {dbPlans && dbPlans.length > 0 ? (
+              dbPlans
+                .filter((p: any) => p.code !== "FREE")
+                .slice(0, 3)
+                .map((p: any) => {
+                  const isPro = p.code === "PRO";
+                  return (
+                    <div
+                      key={p.id}
+                      className={`p-8 rounded-2xl bg-white dark:bg-slate-900 flex flex-col justify-between relative shadow-xl transition-all ${
+                        isPro
+                          ? "border-2 border-blue-600 dark:border-blue-500"
+                          : "border border-slate-200 dark:border-slate-800"
+                      }`}
+                    >
+                      {isPro && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider">
+                          Most Popular
+                        </span>
+                      )}
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">{p.name}</h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {isPro ? "For scaling stores with active ad spend" : p.code === "STARTER" ? "For new merchants testing products" : "For enterprise volume & dedicated capacity"}
+                        </p>
+                        <div className="mt-6 flex items-baseline gap-1">
+                          <span className="text-4xl font-extrabold text-slate-900 dark:text-white">
+                            ${p.priceMonthly}
+                          </span>
+                          <span className="text-xs text-slate-500">/ month</span>
+                        </div>
+                        <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
+                          <li className="flex items-center gap-2">✓ {p.storeLimit} Connected Store{p.storeLimit > 1 ? "s" : ""}</li>
+                          <li className="flex items-center gap-2">✓ {p.aiCreditsLimit.toLocaleString()} AI Credits / mo</li>
+                          <li className="flex items-center gap-2">✓ {p.orderLimit.toLocaleString()} Automated Orders</li>
+                          <li className="flex items-center gap-2">✓ {p.productLimit.toLocaleString()} Catalog Limit</li>
+                          <li className="flex items-center gap-2">✓ {p.supportLevel || "Standard"} Support</li>
+                        </ul>
+                      </div>
+                      <Link
+                        href="/auth/signup"
+                        className={`mt-8 w-full block text-center py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                          isPro
+                            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+                            : "border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        {isPro ? "Launch Pro Platform" : `Start with ${p.name}`}
+                      </Link>
+                    </div>
+                  );
+                })
+            ) : (
+              <>
+                <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">Starter</h3>
+                    <p className="text-xs text-slate-500 mt-1">For new merchants testing their first product</p>
+                    <div className="mt-6 flex items-baseline gap-1">
+                      <span className="text-4xl font-extrabold text-slate-900 dark:text-white">$29</span>
+                      <span className="text-xs text-slate-500">/ month</span>
+                    </div>
+                    <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
+                      <li className="flex items-center gap-2">✓ 1 Connected Store</li>
+                      <li className="flex items-center gap-2">✓ 50 AI Product Searches / mo</li>
+                      <li className="flex items-center gap-2">✓ 200 Automated Orders</li>
+                    </ul>
+                  </div>
+                  <Link href="/app/dashboard" className="mt-8 w-full block text-center py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                    Launch Starter Demo
+                  </Link>
                 </div>
-                <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2">✓ 1 Connected Store</li>
-                  <li className="flex items-center gap-2">✓ 50 AI Product Searches / mo</li>
-                  <li className="flex items-center gap-2">✓ 200 Automated Orders</li>
-                  <li className="flex items-center gap-2">✓ Standard Supplier Routing</li>
-                </ul>
-              </div>
-              <Link href="/app/dashboard" className="mt-8 w-full block text-center py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
-                Launch Starter Demo
-              </Link>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border-2 border-blue-600 dark:border-blue-500 flex flex-col justify-between relative shadow-xl">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider">
-                Most Popular
-              </span>
-              <div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Pro Merchant</h3>
-                <p className="text-xs text-slate-500 mt-1">For scaling stores with active ad spend</p>
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">$79</span>
-                  <span className="text-xs text-slate-500">/ month</span>
+                <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border-2 border-blue-600 dark:border-blue-500 flex flex-col justify-between relative shadow-xl">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider">Most Popular</span>
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">Pro Merchant</h3>
+                    <p className="text-xs text-slate-500 mt-1">For scaling stores with active ad spend</p>
+                    <div className="mt-6 flex items-baseline gap-1">
+                      <span className="text-4xl font-extrabold text-slate-900 dark:text-white">$79</span>
+                      <span className="text-xs text-slate-500">/ month</span>
+                    </div>
+                  </div>
+                  <Link href="/app/dashboard" className="mt-8 w-full block text-center py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-md">Launch Pro Platform</Link>
                 </div>
-                <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2">✓ 5 Connected Stores</li>
-                  <li className="flex items-center gap-2">✓ Unlimited AI Product Radar</li>
-                  <li className="flex items-center gap-2">✓ 5,000 Automated Orders</li>
-                  <li className="flex items-center gap-2">✓ Supplier Auto-Fallback & Fraud Guard</li>
-                  <li className="flex items-center gap-2">✓ AI Creative Studio & Ad Copywriter</li>
-                </ul>
-              </div>
-              <Link href="/app/dashboard" className="mt-8 w-full block text-center py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-md">
-                Launch Pro Platform
-              </Link>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Scale Enterprise</h3>
-                <p className="text-xs text-slate-500 mt-1">For 7-figure brands requiring custom SLAs</p>
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">$199</span>
-                  <span className="text-xs text-slate-500">/ month</span>
+                <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">Scale Enterprise</h3>
+                    <p className="text-xs text-slate-500 mt-1">For 7-figure brands requiring custom SLAs</p>
+                    <div className="mt-6 flex items-baseline gap-1">
+                      <span className="text-4xl font-extrabold text-slate-900 dark:text-white">$199</span>
+                      <span className="text-xs text-slate-500">/ month</span>
+                    </div>
+                  </div>
+                  <Link href="/contact" className="mt-8 w-full block text-center py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Contact Enterprise Sales</Link>
                 </div>
-                <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2">✓ Unlimited Stores</li>
-                  <li className="flex items-center gap-2">✓ Dedicated High-Speed Webhook Workers</li>
-                  <li className="flex items-center gap-2">✓ Custom Carrier & 3PL Integration</li>
-                  <li className="flex items-center gap-2">✓ Audit Log Exports & Role Permissions</li>
-                </ul>
-              </div>
-              <Link href="/contact" className="mt-8 w-full block text-center py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
-                Contact Enterprise Sales
-              </Link>
-            </div>
+              </>
+            )}
           </div>
         </section>
 
