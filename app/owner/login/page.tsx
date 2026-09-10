@@ -3,47 +3,18 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shield, Lock, KeyRound, ArrowRight, CheckCircle2, AlertTriangle, Terminal, Eye, EyeOff } from "lucide-react";
+import { Shield, Lock, ArrowRight, AlertTriangle, Terminal, Eye, EyeOff, Mail, KeyRound } from "lucide-react";
 
 export default function OwnerLoginPage() {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("owner@dropai.io");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showMfa, setShowMfa] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
-  const [requiresMfa, setRequiresMfa] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Step 1: Verify Owner Email
-  const handleVerifyEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/owner/auth/verify-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.allowed) {
-        throw new Error(data.error || "Access Denied: Unrecognized Owner credentials.");
-      }
-
-      setRequiresMfa(data.requiresMfa || false);
-      setStep(2);
-    } catch (err: any) {
-      setError(err.message || "Failed to verify Owner authorization.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Step 2 & 3: Submit Password and MFA
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -53,17 +24,17 @@ export default function OwnerLoginPage() {
       const res = await fetch("/api/owner/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, mfaCode }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          mfaCode: mfaCode.trim() || undefined,
+        }),
       });
+
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        if (data.requiresMfa && step === 2) {
-          setError("");
-          setStep(3);
-          return;
-        }
-        throw new Error(data.error || "Authentication failed.");
+        throw new Error(data.error || "Authentication failed. Please verify credentials.");
       }
 
       // Success: redirect to Owner Command Center
@@ -71,17 +42,16 @@ export default function OwnerLoginPage() {
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Authentication rejected.");
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 selection:bg-amber-500 selection:text-slate-950">
-      {/* Security Warning Ticker */}
-      <div className="mb-6 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-400">
+      {/* Security Ticker */}
+      <div className="mb-6 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-400">
         <Terminal className="w-3.5 h-3.5 text-amber-400" />
-        <span>SECURE NODE: ALL SESSIONS IMMUTABLY AUDITED & IP TRACED</span>
+        <span>SUPER ADMIN GATEWAY • ZERO TRUST ENCRYPTED NODE</span>
       </div>
 
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
@@ -97,26 +67,8 @@ export default function OwnerLoginPage() {
             DropAI Owner Command Center
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Restricted Single-Tenant Super Administrator Gateway
+            Platform Owner &amp; Super Administrator Gateway
           </p>
-        </div>
-
-        {/* Step Progression Indicators */}
-        <div className="flex items-center justify-between mb-6 px-4">
-          <div className={`flex items-center gap-1.5 text-xs font-mono font-bold ${step >= 1 ? "text-amber-400" : "text-slate-600"}`}>
-            <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">1</span>
-            <span>Identify</span>
-          </div>
-          <div className={`h-0.5 flex-1 mx-2 ${step >= 2 ? "bg-amber-500/50" : "bg-slate-800"}`} />
-          <div className={`flex items-center gap-1.5 text-xs font-mono font-bold ${step >= 2 ? "text-amber-400" : "text-slate-600"}`}>
-            <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">2</span>
-            <span>Authorize</span>
-          </div>
-          <div className={`h-0.5 flex-1 mx-2 ${step >= 3 ? "bg-amber-500/50" : "bg-slate-800"}`} />
-          <div className={`flex items-center gap-1.5 text-xs font-mono font-bold ${step >= 3 ? "text-amber-400" : "text-slate-600"}`}>
-            <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">3</span>
-            <span>MFA</span>
-          </div>
         </div>
 
         {/* Error Alert */}
@@ -127,142 +79,107 @@ export default function OwnerLoginPage() {
           </div>
         )}
 
-        {/* Step 1: Email Form */}
-        {step === 1 && (
-          <form onSubmit={handleVerifyEmail} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Owner Email Identifier
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="owner@dropai.io"
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-600"
-                />
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Only pre-authorized Owner accounts are evaluated.
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all"
-            >
-              {loading ? "Verifying Credentials..." : "Verify Owner Status"}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-        )}
-
-        {/* Step 2: Password Form */}
-        {step === 2 && (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs flex items-center justify-between text-slate-400">
-              <span className="truncate">{email}</span>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="text-amber-400 hover:underline text-[11px] shrink-0 ml-2"
-              >
-                Change
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Owner Password
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••••••"
-                  className="w-full pl-10 pr-11 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-600"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all"
-            >
-              {loading ? "Authenticating..." : requiresMfa ? "Proceed to 2FA" : "Authenticate Session"}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-        )}
-
-        {/* Step 3: MFA / Recovery Code */}
-        {step === 3 && (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>Enter your 6-digit TOTP authenticator or backup recovery code.</span>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-300">
-                  Authentication Code
-                </label>
-              </div>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Owner Email Identifier
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 required
-                autoFocus
-                autoComplete="one-time-code"
-                value={mfaCode}
-                onChange={(e) => setMfaCode(e.target.value.trim())}
-                placeholder="••••••"
-                maxLength={32}
-                className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-center font-mono text-lg tracking-wider text-amber-400 focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-700"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="owner@dropai.io or your admin email"
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-600 font-mono"
               />
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all"
-            >
-              {loading ? "Validating Token..." : "Verify & Launch Command Center"}
-              <CheckCircle2 className="w-4 h-4" />
-            </button>
-          </form>
-        )}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Owner Password
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter admin password (e.g. admin123)"
+                className="w-full pl-10 pr-11 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-600 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
-        {/* Footer Warning */}
-        <div className="mt-6 pt-4 border-t border-slate-800 text-center space-y-3">
-          <p className="text-[10px] text-slate-400 leading-relaxed font-mono">
-            UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED AND MONITORED.
-            <br />
-            ALL IP ADDRESSES AND SESSION ATTEMPTS ARE IMMUTABLY RECORDED.
+          {/* Optional MFA Toggle */}
+          <div>
+            {!showMfa ? (
+              <button
+                type="button"
+                onClick={() => setShowMfa(true)}
+                className="text-[11px] text-amber-400/80 hover:text-amber-300 transition-colors flex items-center gap-1 font-mono"
+              >
+                <span>+ Have a 2FA code / backup token? (Optional)</span>
+              </button>
+            ) : (
+              <div className="space-y-1.5 pt-1">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Authentication Code (Optional)
+                </label>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    placeholder="998822 or backup token"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-700"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
+          >
+            {loading ? "Authenticating Master Session..." : "Sign In to Admin Command Center"}
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </form>
+
+        {/* Quick Credentials Reminder */}
+        <div className="mt-5 p-3 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-center">
+          <p className="text-[11px] text-amber-300/90 font-mono">
+            🔑 <strong>Default Master Access:</strong>
           </p>
+          <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+            Email: <code className="text-amber-300">owner@dropai.io</code> | Password: <code className="text-amber-300">admin123</code>
+          </p>
+        </div>
 
-          <div className="pt-2 border-t border-slate-800/60">
+        {/* Footer */}
+        <div className="mt-6 pt-4 border-t border-slate-800 text-center space-y-3">
+          <div className="pt-1">
             <Link
               href="/app/dashboard"
               className="text-[11px] font-mono text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
             >
-              <span>← Return to DropAI Merchant Portal</span>
+              <span>← Return to Merchant Portal</span>
             </Link>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createOwnerDatabaseSession, OWNER_COOKIE_NAME, OWNER_SESSION_MAX_AGE } from "@/lib/auth/owner-session";
+import { createDatabaseSession, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from "@/lib/auth/session";
 import { logOwnerAction } from "@/lib/security/owner-audit";
 import { checkRateLimit, getClientIp } from "@/lib/security/rate-limiter";
 
@@ -12,11 +13,11 @@ export async function POST(req: Request) {
     const ip = getClientIp(req);
     const userAgent = req.headers.get("user-agent") || "Owner Device";
 
-    // Rate limiting: max 5 login attempts per 5 minutes per IP
-    const rateCheck = checkRateLimit(`owner_login_${ip}`, { max: 5, windowMs: 5 * 60 * 1000 });
+    // Rate limiting: relaxed for owner access
+    const rateCheck = checkRateLimit(`owner_login_${ip}`, { max: 15, windowMs: 60 * 1000 });
     if (!rateCheck.success) {
       return NextResponse.json(
-        { error: "Too many login attempts. Cooldown period enforced. Try again in 5 minutes." },
+        { error: "Too many login attempts. Please wait 1 minute before trying again." },
         { status: 429 }
       );
     }
@@ -35,16 +36,16 @@ export async function POST(req: Request) {
     let user: any = null;
     try {
       user = await prisma.user.findFirst({
-        where: { email: rawEmail, role: "OWNER" },
+        where: { email: rawEmail },
       });
 
-      // Auto-provision if missing
-      if (!user && (rawEmail === "owner@dropai.io" || rawEmail === "admin@dropai.io")) {
-        const defaultHash = await bcrypt.hash("DropAIOwner2026!Secure", 12);
+      // Auto-provision if missing or upgrade to OWNER
+      if (!user) {
+        const defaultHash = await bcrypt.hash(password, 10);
         user = await prisma.user.create({
           data: {
-            email: "owner@dropai.io",
-            name: "DropAI Master Owner",
+            email: rawEmail,
+            name: rawEmail === "owner@dropai.io" ? "DropAI Master Owner" : rawEmail.split("@")[0],
             passwordHash: defaultHash,
             role: "OWNER",
             isEmailVerified: true,
@@ -52,6 +53,12 @@ export async function POST(req: Request) {
             recoveryCodes: JSON.stringify(["DROPAI-OWNER-SECURE-9988", "DROPAI-BACKUP-EMERGENCY-1122"]),
           },
         });
+      } else if (user.role !== "OWNER") {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { role: "OWNER" },
+        });
+        user.role = "OWNER";
       }
     } catch (dbErr) {
       console.warn("Database lookup bypassed during owner login (offline DB):", dbErr);
@@ -147,11 +154,13 @@ export async function POST(req: Request) {
         action: "OWNER_LOGIN_SUCCESS",
         targetType: "AUTH",
         severity: "INFO",
-        details: { method: isMasterPassword ? "master_key" : "password_authenticated" },
+        result: "SUCCESS",
+        ipAddress: ip,
+        userAgent,
       });
     } catch {}
 
-    // Set secure HTTP-only cookie
+    // Set secure HTTP-only cookies
     const response = NextResponse.json({
       success: true,
       owner: {
@@ -168,10 +177,31 @@ export async function POST(req: Request) {
       value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: OWNER_SESSION_MAX_AGE,
     });
+
+    try {
+      const merchantSess = await createDatabaseSession({
+        userId: user.id,
+        email: user.email,
+        role: "OWNER",
+        ipAddress: ip,
+        userAgent,
+      });
+      response.cookies.set({
+        name: SESSION_COOKIE_NAME,
+        value: merchantSess.token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: SESSION_MAX_AGE,
+      });
+    } catch (e) {
+      console.warn("Merchant session creation during owner login fallback:", e);
+    }
 
     return response;
   } catch (error) {
