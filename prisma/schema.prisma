@@ -3,16 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
   id                String          @id @default(cuid())
+  firebaseUid       String?         @unique
   email             String          @unique
-  passwordHash      String
+  passwordHash      String?         // Never store user passwords; Firebase handles authentication
   name              String
-  role              String          @default("MERCHANT") // ADMIN, MERCHANT, VIEWER
+  role              String          @default("MERCHANT") // OWNER, ADMIN, MERCHANT, VIEWER
+  status            String          @default("EMAIL_UNVERIFIED") // ACTIVE, EMAIL_UNVERIFIED, SUSPENDED, DISABLED
   avatarUrl         String?
   isEmailVerified   Boolean         @default(false)
   twoFactorEnabled  Boolean         @default(false)

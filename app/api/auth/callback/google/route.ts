@@ -69,20 +69,14 @@ export async function GET(req: Request) {
     let user = await prisma.user.findUnique({
       where: { email },
     }).catch(() => null);
-
     if (!user) {
-      // Create user with randomized unguessable password hash for OAuth
-      const randomPassword = crypto.randomBytes(32).toString("hex");
-      const bcrypt = require("bcryptjs");
-      const passwordHash = await bcrypt.hash(randomPassword, 10);
-
       user = await prisma.user.create({
         data: {
           email,
           name,
           avatarUrl,
-          passwordHash,
           role: "MERCHANT",
+          status: "ACTIVE",
           isEmailVerified: true,
           subscription: {
             create: {

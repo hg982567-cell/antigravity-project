@@ -1,5 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+function decodeJwtPayload(token: string): any {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const jsonStr = Buffer.from(base64, "base64").toString("utf-8");
+    return JSON.parse(jsonStr);
+  } catch {
+    return null;
+  }
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -21,6 +33,18 @@ export function middleware(request: NextRequest) {
       const redirectTarget = pathname + (request.nextUrl.search || "");
       loginUrl.searchParams.set("redirect", redirectTarget);
       return NextResponse.redirect(loginUrl);
+    }
+
+    // Enforce email verification on /app/*
+    if (sessionToken && !ownerToken) {
+      const payload = decodeJwtPayload(sessionToken);
+      if (payload && payload.isEmailVerified === false && payload.role !== "OWNER") {
+        const verifyUrl = new URL("/auth/verify-email", request.url);
+        if (payload.email) {
+          verifyUrl.searchParams.set("email", payload.email);
+        }
+        return NextResponse.redirect(verifyUrl);
+      }
     }
   }
 
@@ -49,6 +73,17 @@ export function middleware(request: NextRequest) {
         { error: "Access Denied: Authentication Required" },
         { status: 401 }
       );
+    }
+
+    // Block unverified accounts from mutating store data
+    if (sessionToken && !ownerToken) {
+      const payload = decodeJwtPayload(sessionToken);
+      if (payload && payload.isEmailVerified === false && payload.role !== "OWNER") {
+        return NextResponse.json(
+          { error: "Email verification required before accessing store APIs." },
+          { status: 403 }
+        );
+      }
     }
   }
 

@@ -12,21 +12,24 @@ export const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
 export interface SessionPayload {
   userId: string;
+  firebaseUid?: string;
   email: string;
   role: string;
   sessionId: string;
+  status?: string;
+  isEmailVerified?: boolean;
   [key: string]: unknown;
 }
 
 /**
- * Hash plain password securely with 12 salt rounds.
+ * Hash plain password securely with 12 salt rounds (kept for legacy migration only; new auth is Firebase-only).
  */
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
 
 /**
- * Verify plaintext password against stored bcrypt hash.
+ * Verify plaintext password against stored bcrypt hash (kept for legacy migration only).
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
@@ -60,14 +63,17 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
  */
 export async function createDatabaseSession(params: {
   userId: string;
+  firebaseUid?: string;
   email: string;
   role: string;
+  status?: string;
+  isEmailVerified?: boolean;
   ipAddress: string;
   userAgent: string;
 }): Promise<{ token: string; sessionId: string }> {
   // Infer device type & browser from user agent
   let deviceType = "Desktop";
-  const ua = params.userAgent.toLowerCase();
+  const ua = (params.userAgent || "").toLowerCase();
   if (/mobile|android|iphone|ipad|phone/i.test(ua)) {
     deviceType = ua.includes("ipad") || ua.includes("tablet") ? "Tablet" : "Mobile";
   }
@@ -101,8 +107,11 @@ export async function createDatabaseSession(params: {
 
   const jwtToken = await signSessionToken({
     userId: params.userId,
+    firebaseUid: params.firebaseUid,
     email: params.email,
     role: params.role,
+    status: params.status,
+    isEmailVerified: params.isEmailVerified,
     sessionId: finalSessionId,
   });
 
@@ -137,9 +146,11 @@ export async function getCurrentUser() {
           user: {
             select: {
               id: true,
+              firebaseUid: true,
               email: true,
               name: true,
               role: true,
+              status: true,
               avatarUrl: true,
               twoFactorEnabled: true,
               isEmailVerified: true,
@@ -164,7 +175,7 @@ export async function getCurrentUser() {
       console.warn("DB session lookup fallback:", err);
     }
 
-    if (dbSession && dbSession.isValid && new Date() <= dbSession.expiresAt) {
+    if (dbSession && dbSession.isValid && new Date() <= dbSession.expiresAt && dbSession.user) {
       try {
         await prisma.session.update({
           where: { id: dbSession.id },
@@ -174,6 +185,7 @@ export async function getCurrentUser() {
 
       return {
         ...dbSession.user,
+        status: dbSession.user.status || (dbSession.user.isEmailVerified ? "ACTIVE" : "EMAIL_UNVERIFIED"),
         sessionId: dbSession.id,
       };
     }
@@ -184,9 +196,11 @@ export async function getCurrentUser() {
         where: { id: payload.userId },
         select: {
           id: true,
+          firebaseUid: true,
           email: true,
           name: true,
           role: true,
+          status: true,
           avatarUrl: true,
           twoFactorEnabled: true,
           isEmailVerified: true,
@@ -206,9 +220,10 @@ export async function getCurrentUser() {
         },
       });
 
-      if (user && !user.isSuspended) {
+      if (user) {
         return {
           ...user,
+          status: user.status || (user.isEmailVerified ? "ACTIVE" : "EMAIL_UNVERIFIED"),
           sessionId: payload.sessionId,
         };
       }
@@ -219,13 +234,15 @@ export async function getCurrentUser() {
     // Fallback: If DB is unreachable, rely on valid signed JWT payload
     return {
       id: payload.userId,
+      firebaseUid: payload.firebaseUid,
       email: payload.email,
       name: payload.email ? payload.email.split("@")[0] : "Merchant",
       role: payload.role || "MERCHANT",
+      status: payload.status || (payload.isEmailVerified ? "ACTIVE" : "EMAIL_UNVERIFIED"),
       avatarUrl: null,
       twoFactorEnabled: false,
-      isEmailVerified: true,
-      isSuspended: false,
+      isEmailVerified: payload.isEmailVerified ?? true,
+      isSuspended: payload.status === "SUSPENDED",
       suspendedReason: null,
       createdAt: new Date(),
       sessionId: payload.sessionId,

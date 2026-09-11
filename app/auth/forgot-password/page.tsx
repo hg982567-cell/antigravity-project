@@ -2,20 +2,37 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { KeyRound, Mail, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { KeyRound, Mail, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { sendFirebasePasswordReset } from "@/lib/firebase/client";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError(null);
+
+    try {
+      // Send real password reset link via Firebase Auth
+      await sendFirebasePasswordReset(email.trim());
+      // Anti-enumeration: Always show success regardless of result
       setSubmitted(true);
-    }, 700);
+    } catch (err: any) {
+      console.warn("Password reset error:", err);
+      // Even if user not found, Firebase might throw auth/user-not-found.
+      // To strictly prevent email enumeration, we still show the success confirmation screen!
+      if (err.code === "auth/invalid-email") {
+        setError("Please enter a valid email address.");
+      } else {
+        setSubmitted(true);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,23 +45,30 @@ export default function ForgotPasswordPage() {
             </div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Reset your password</h2>
             <p className="mt-1 text-xs text-slate-500">
-              Enter your registered email address to receive a secure password recovery token.
+              Enter your registered email address to receive a secure Firebase password reset link.
             </p>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-700 dark:text-rose-400 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {submitted ? (
             <div className="text-center py-4">
-              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 mb-6">
+              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 mb-6 leading-relaxed">
                 <CheckCircle2 className="w-5 h-5 mx-auto mb-2 text-emerald-600" />
                 <span>
-                  If an account exists for <strong className="font-semibold">{email}</strong>, a cryptographically signed password reset link has been dispatched.
+                  If an account exists for <strong className="font-semibold">{email}</strong>, a secure password recovery link has been dispatched. Please check your inbox and spam folder.
                 </span>
               </div>
               <Link
-                href="/auth/reset-password?token=sample_demo_reset_token_2026"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm mb-4"
+                href="/auth/login"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition-colors"
               >
-                Proceed to Reset Form (Demo)
+                Return to Sign In
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -61,7 +85,7 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="demo@dropai.io"
+                    placeholder="merchant@store.com"
                     className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -69,10 +93,10 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !email}
                 className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
               >
-                {loading ? "Transmitting Token..." : "Send Reset Token"}
+                {loading ? "Transmitting Reset Link..." : "Send Reset Link"}
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </form>

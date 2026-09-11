@@ -26,7 +26,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data.authenticated && data.user) {
           setCurrentUser(data.user);
-          setIsOwner(data.isOwner || data.user.role === "OWNER");
+          const ownerState = Boolean(data.isOwner || data.user.role === "OWNER");
+          setIsOwner(ownerState);
+
+          // Enforce Email Verification: Unverified merchants cannot access dashboard
+          if (!data.user.isEmailVerified && !ownerState) {
+            router.replace(`/auth/verify-email?email=${encodeURIComponent(data.user.email || "")}`);
+            return;
+          }
         } else {
           const redirect = encodeURIComponent(window.location.pathname + window.location.search);
           router.replace(`/auth/login?redirect=${redirect}`);

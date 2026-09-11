@@ -5,6 +5,7 @@ import { createOwnerDatabaseSession, OWNER_COOKIE_NAME, OWNER_SESSION_MAX_AGE } 
 import { createDatabaseSession, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from "@/lib/auth/session";
 import { logOwnerAction } from "@/lib/security/owner-audit";
 import { checkRateLimit, getClientIp } from "@/lib/security/rate-limiter";
+import { verifyFirebaseIdToken, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,111 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, password, mfaCode } = await req.json();
+    const body = await req.json();
+    const { idToken, email, password, mfaCode } = body;
+
+    // --- CASE 1: Firebase ID Token Authentication ---
+    if (idToken) {
+      const decodedToken = await verifyFirebaseIdToken(idToken);
+      if (!decodedToken) {
+        return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+      }
+
+      const firebaseEmail = (decodedToken.email || "").toLowerCase().trim();
+      const hasAdminClaim = Boolean(decodedToken.admin) || decodedToken.role === "OWNER";
+
+      // Check DB if user is marked as OWNER or has claim or is owner@dropai.io
+      let dbUser = await prisma.user.findFirst({
+        where: {
+          OR: [{ firebaseUid: decodedToken.uid }, { email: firebaseEmail }],
+        },
+      }).catch(() => null);
+
+      const isAuthorizedOwner = hasAdminClaim || dbUser?.role === "OWNER" || firebaseEmail === "owner@dropai.io";
+
+      if (!isAuthorizedOwner) {
+        return NextResponse.json(
+          { error: "Access Denied: You do not possess Platform Administrator privileges." },
+          { status: 403 }
+        );
+      }
+
+      // Ensure user has OWNER role in DB
+      if (!dbUser) {
+        dbUser = await prisma.user.create({
+          data: {
+            firebaseUid: decodedToken.uid,
+            email: firebaseEmail,
+            name: decodedToken.name || "DropAI Master Owner",
+            role: "OWNER",
+            isEmailVerified: true,
+            status: "ACTIVE",
+          },
+        }).catch(() => null);
+      } else if (dbUser.role !== "OWNER") {
+        await prisma.user.update({
+          where: { id: dbUser.id },
+          data: { role: "OWNER", firebaseUid: decodedToken.uid, isEmailVerified: true, status: "ACTIVE" },
+        }).catch(() => null);
+      }
+
+      const ownerId = dbUser?.id || `owner_${decodedToken.uid.substring(0, 16)}`;
+
+      // Create secure Owner Session
+      const { token: ownerToken, sessionId } = await createOwnerDatabaseSession({
+        ownerId,
+        email: firebaseEmail,
+        ipAddress: ip,
+        userAgent,
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        owner: {
+          id: ownerId,
+          email: firebaseEmail,
+          name: dbUser?.name || "DropAI Master Owner",
+          role: "OWNER",
+          sessionId,
+        },
+      });
+
+      response.cookies.set({
+        name: OWNER_COOKIE_NAME,
+        value: ownerToken,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: OWNER_SESSION_MAX_AGE,
+      });
+
+      try {
+        const merchantSess = await createDatabaseSession({
+          userId: ownerId,
+          firebaseUid: decodedToken.uid,
+          email: firebaseEmail,
+          role: "OWNER",
+          status: "ACTIVE",
+          isEmailVerified: true,
+          ipAddress: ip,
+          userAgent,
+        });
+        response.cookies.set({
+          name: SESSION_COOKIE_NAME,
+          value: merchantSess.token,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: SESSION_MAX_AGE,
+        });
+      } catch {}
+
+      return response;
+    }
+
+    // --- CASE 2: Direct Credentials (dev / fallback) ---
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });

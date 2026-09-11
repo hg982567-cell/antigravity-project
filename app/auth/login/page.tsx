@@ -1,9 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sparkles, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
+import {
+  Sparkles,
+  Lock,
+  Mail,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import {
+  signInWithFirebase,
+  signInWithGooglePopup,
+  isFirebaseConfigured,
+} from "@/lib/firebase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,16 +25,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [googleNotice, setGoogleNotice] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("google_error") === "setup_required") {
-      setGoogleNotice(
-        "To enable real Google OAuth Sign-In, please configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your Vercel or .env settings. You can sign in directly with your Email and Password below."
-      );
-    }
     const err = params.get("error");
     if (err) {
       setError(err);
@@ -33,35 +42,99 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      // 1. Authenticate via Firebase Authentication (Zero manual passwords, Zero plaintext)
+      const user = await signInWithFirebase(email, password);
+
+      // 2. Obtain ID Token
+      const idToken = await user.getIdToken();
+
+      // 3. Exchange with DropAI backend to establish secure HttpOnly session
+      const res = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ idToken, action: "login" }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        setError(data.error || "Authentication failed.");
+      if (!res.ok || !data.success) {
+        // Anti-Brute Force Protection: Generic error message, no user enumeration
+        setError(data.error || "Invalid email or password.");
         setLoading(false);
         return;
       }
 
-      if (data.requires2FA) {
-        router.push(`/auth/2fa?userId=${data.userId}`);
+      // 4. Enforce Email Verification: Redirect unverified accounts to verification gate
+      if (!data.user?.isEmailVerified && data.user?.role !== "OWNER") {
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
+
+      // 5. Success: Redirect to target dashboard
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirect");
+      if (redirectUrl && redirectUrl.startsWith("/")) {
+        router.push(redirectUrl);
+      } else if (data.isOwner || data.user?.role === "OWNER") {
+        router.push("/owner/dashboard");
+      } else {
+        router.push("/app/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Login attempt failed:", err);
+      // Strictly enforce anti-enumeration: Always show generic error
+      // Except for rate limits or network issues
+      if (err.code === "auth/too-many-requests") {
+        setError("Too many login attempts. Please wait a minute before trying again.");
+      } else if (err.code === "auth/network-request-failed") {
+        setError("Network error connecting to authentication provider.");
+      } else {
+        setError("Invalid email or password.");
+      }
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleLoading(true);
+
+    try {
+      const user = await signInWithGooglePopup();
+      const idToken = await user.getIdToken();
+
+      const res = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, action: "google_login" }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || "Invalid email or password.");
+        setGoogleLoading(false);
         return;
       }
 
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
-      if (redirectUrl && redirectUrl.startsWith("/")) {
-        router.push(redirectUrl);
+
+      if (data.isOwner || data.user?.role === "OWNER") {
+        router.push(redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/owner/dashboard");
       } else {
-        router.push("/app/dashboard");
+        router.push(redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/app/dashboard");
       }
-    } catch {
-      setError("Network error connecting to authentication server.");
-      setLoading(false);
+    } catch (err: any) {
+      console.error("Google sign in error:", err);
+      if (err.code === "auth/popup-closed-by-user") {
+        // Ignored
+      } else if (err.code === "auth/popup-blocked") {
+        setError("Popup was blocked by your browser. Please enable popups.");
+      } else {
+        setError("Google authentication failed. Please try again or use email.");
+      }
+      setGoogleLoading(false);
     }
   };
 
@@ -86,12 +159,13 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white dark:bg-slate-900 py-8 px-6 shadow-xl border border-slate-200 dark:border-slate-800 sm:rounded-2xl sm:px-10">
-
-          {/* Real Google OAuth Button */}
+          {/* Google Sign-In */}
           <div className="mb-5">
-            <a
-              href="/api/auth/google"
-              className="w-full py-2.5 px-4 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2.5 shadow-sm"
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading || loading}
+              className="w-full py-2.5 px-4 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2.5 shadow-sm disabled:opacity-50"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -111,25 +185,20 @@ export default function LoginPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>Continue with Google</span>
-            </a>
+              <span>{googleLoading ? "Connecting with Google..." : "Continue with Google"}</span>
+            </button>
 
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-200 dark:border-slate-800" />
               </div>
               <div className="relative flex justify-center text-[11px] uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-slate-400 font-medium">Or sign in with email</span>
+                <span className="bg-white dark:bg-slate-900 px-2 text-slate-400 font-medium">
+                  Or sign in with email
+                </span>
               </div>
             </div>
           </div>
-
-          {googleNotice && (
-            <div className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-300">
-              <p className="font-semibold mb-1">ℹ️ Google OAuth Configuration:</p>
-              <p className="text-[11px] leading-relaxed">{googleNotice}</p>
-            </div>
-          )}
 
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 flex items-center gap-2.5 text-xs text-red-700 dark:text-red-400">
@@ -141,7 +210,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Email ID (e.g. Gmail / Work Email)
+                Email Address
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -150,7 +219,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your-email@gmail.com"
+                  placeholder="merchant@store.com"
                   className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -176,7 +245,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="••••••••••••"
                   className="w-full pl-9 pr-10 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
@@ -192,10 +261,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
             >
-              {loading ? "Authenticating..." : "Sign In with Email & Password"}
+              {loading ? "Verifying Credentials..." : "Sign In with Email & Password"}
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>

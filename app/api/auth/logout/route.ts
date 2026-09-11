@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session";
+import { OWNER_COOKIE_NAME } from "@/lib/auth/owner-session";
+import { revokeFirebaseRefreshTokens } from "@/lib/firebase/admin";
 
 export async function POST() {
   try {
@@ -25,15 +27,21 @@ export async function POST() {
           },
         }).catch(() => null);
       }
+
+      if (payload?.firebaseUid) {
+        await revokeFirebaseRefreshTokens(payload.firebaseUid).catch(() => null);
+      }
     }
 
     const response = NextResponse.json({ success: true });
     response.cookies.delete(SESSION_COOKIE_NAME);
+    response.cookies.delete(OWNER_COOKIE_NAME);
     return response;
   } catch (error) {
     console.error("Logout error:", error);
     const response = NextResponse.json({ success: true });
     response.cookies.delete(SESSION_COOKIE_NAME);
+    response.cookies.delete(OWNER_COOKIE_NAME);
     return response;
   }
 }
