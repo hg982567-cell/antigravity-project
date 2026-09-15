@@ -15,6 +15,39 @@ function decodeJwtPayload(token: string): any {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 0. Path Normalization & Canonical Route Redirection (Resolves all 404s for un-prefixed SaaS routes)
+  const canonicalRedirects: Record<string, string> = {
+    "/billing": "/app/billing",
+    "/subscription": "/app/billing",
+    "/subscriptions": "/app/billing",
+    "/dashboard/billing": "/app/billing",
+    "/dashboard/subscription": "/app/billing",
+    "/app/subscription": "/app/billing",
+    "/app/subscriptions": "/app/billing",
+    "/dashboard": "/app/dashboard",
+    "/products": "/app/products",
+    "/orders": "/app/orders",
+    "/stores": "/app/stores",
+    "/suppliers": "/app/suppliers",
+    "/customers": "/app/customers",
+    "/settings": "/app/settings",
+    "/analytics": "/app/analytics",
+    "/admin": "/owner/dashboard",
+    "/admin/billing": "/owner/subscriptions",
+    "/admin/subscription": "/owner/subscriptions",
+    "/admin/subscriptions": "/owner/subscriptions",
+    "/owner/billing": "/owner/subscriptions",
+    "/owner/subscription": "/owner/subscriptions",
+  };
+
+  if (canonicalRedirects[pathname]) {
+    const targetUrl = new URL(canonicalRedirects[pathname], request.url);
+    if (request.nextUrl.search) {
+      targetUrl.search = request.nextUrl.search;
+    }
+    return NextResponse.redirect(targetUrl, 308);
+  }
+
   // Add security headers to all responses
   const response = NextResponse.next();
 

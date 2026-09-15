@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const target = (process.argv[2] || "postgres").toLowerCase();
+const target = (process.argv[2] || "auto").toLowerCase();
 const schemaPath = path.join(__dirname, "..", "prisma", "schema.prisma");
 
 if (!fs.existsSync(schemaPath)) {
@@ -10,8 +10,25 @@ if (!fs.existsSync(schemaPath)) {
 }
 
 let schema = fs.readFileSync(schemaPath, "utf8");
+const dbUrl = (process.env.DATABASE_URL || "").trim();
 
+let isPostgres = false;
 if (target === "postgres" || target === "postgresql") {
+  isPostgres = true;
+} else if (target === "sqlite") {
+  isPostgres = false;
+} else {
+  // auto-detect based on connection string or Vercel production deployment
+  if (dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://")) {
+    isPostgres = true;
+  } else if (process.env.VERCEL === "1" && !dbUrl.startsWith("file:")) {
+    isPostgres = true;
+  } else {
+    isPostgres = false;
+  }
+}
+
+if (isPostgres) {
   schema = schema.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
   fs.writeFileSync(schemaPath, schema);
   console.log("✅ Configured Prisma for Cloud PostgreSQL (Vercel & Production)");
