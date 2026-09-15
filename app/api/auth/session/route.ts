@@ -256,14 +256,19 @@ export async function POST(req: Request) {
     }
 
     // 7. Establish database session
-    const effectiveStatus = user.status || (isEmailVerified ? "ACTIVE" : "EMAIL_UNVERIFIED");
+    const effectiveIsEmailVerified = Boolean(user.isEmailVerified || isEmailVerified);
+    const effectiveStatus =
+      user.status === "EMAIL_UNVERIFIED" && effectiveIsEmailVerified
+        ? "ACTIVE"
+        : user.status || (effectiveIsEmailVerified ? "ACTIVE" : "EMAIL_UNVERIFIED");
+
     const { token: sessionToken } = await createDatabaseSession({
       userId: user.id,
       firebaseUid,
       email: user.email,
       role: user.role,
       status: effectiveStatus,
-      isEmailVerified: user.isEmailVerified,
+      isEmailVerified: effectiveIsEmailVerified,
       ipAddress: ip,
       userAgent,
     });
@@ -279,7 +284,7 @@ export async function POST(req: Request) {
         name: user.name,
         role: user.role,
         status: effectiveStatus,
-        isEmailVerified: user.isEmailVerified,
+        isEmailVerified: effectiveIsEmailVerified,
       },
       isOwner,
     });

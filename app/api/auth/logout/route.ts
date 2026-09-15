@@ -34,14 +34,38 @@ export async function POST() {
     }
 
     const response = NextResponse.json({ success: true });
-    response.cookies.delete(SESSION_COOKIE_NAME);
-    response.cookies.delete(OWNER_COOKIE_NAME);
+    response.cookies.set({
+      name: SESSION_COOKIE_NAME,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    response.cookies.set({
+      name: OWNER_COOKIE_NAME,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
     return response;
   } catch (error) {
     console.error("Logout error:", error);
     const response = NextResponse.json({ success: true });
-    response.cookies.delete(SESSION_COOKIE_NAME);
-    response.cookies.delete(OWNER_COOKIE_NAME);
+    response.cookies.set({
+      name: SESSION_COOKIE_NAME,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    response.cookies.set({
+      name: OWNER_COOKIE_NAME,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
     return response;
   }
 }

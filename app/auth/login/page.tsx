@@ -73,8 +73,13 @@ export default function LoginPage() {
       // 5. Success: Redirect to target dashboard
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
-      if (redirectUrl && redirectUrl.startsWith("/")) {
-        router.push(redirectUrl);
+      const safeRedirect =
+        redirectUrl && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")
+          ? redirectUrl
+          : null;
+
+      if (safeRedirect) {
+        router.push(safeRedirect);
       } else if (data.isOwner || data.user?.role === "OWNER") {
         router.push("/owner/dashboard");
       } else {
@@ -119,11 +124,15 @@ export default function LoginPage() {
 
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
+      const safeRedirect =
+        redirectUrl && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")
+          ? redirectUrl
+          : null;
 
       if (data.isOwner || data.user?.role === "OWNER") {
-        router.push(redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/owner/dashboard");
+        router.push(safeRedirect || "/owner/dashboard");
       } else {
-        router.push(redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/app/dashboard");
+        router.push(safeRedirect || "/app/dashboard");
       }
     } catch (err: any) {
       console.error("Google sign in error:", err);

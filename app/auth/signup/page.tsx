@@ -20,7 +20,6 @@ import {
 import {
   signUpWithFirebase,
   signInWithGooglePopup,
-  sendVerificationEmail,
   isFirebaseConfigured,
 } from "@/lib/firebase/client";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
@@ -65,15 +64,8 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      // 1. Create account via Firebase Authentication (Zero manual passwords)
+      // 1. Create account via Firebase Authentication (Zero manual passwords; automatically dispatches verification email)
       const user = await signUpWithFirebase(email, password, name);
-
-      // 2. Automatically dispatch email verification
-      try {
-        await sendVerificationEmail();
-      } catch (emailErr) {
-        console.warn("Email verification dispatch error:", emailErr);
-      }
 
       // 3. Obtain cryptographically signed Firebase ID token
       const idToken = await user.getIdToken();

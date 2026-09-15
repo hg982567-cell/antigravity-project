@@ -22,6 +22,7 @@ import {
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useCurrency } from "@/components/providers/CurrencyContext";
 import { useDemo } from "@/components/providers/DemoContext";
+import { signOutFromFirebase } from "@/lib/firebase/client";
 
 interface TopBarProps {
   setMobileOpen: (open: boolean) => void;
@@ -62,6 +63,16 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
     if (searchQuery.trim()) {
       router.push(`/app/products?search=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const handleSignOut = async () => {
+    setProfileDropdownOpen(false);
+    try {
+      await signOutFromFirebase();
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    router.push("/auth/login");
+    router.refresh();
   };
 
   return (
@@ -294,14 +305,13 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
               </div>
 
               <div className="border-t border-slate-100 dark:border-slate-800 pt-1">
-                <Link
-                  href="/auth/login"
-                  onClick={() => setProfileDropdownOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Sign Out
-                </Link>
+                </button>
               </div>
             </div>
           )}

@@ -2,9 +2,9 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // Test password policy directly
-function runPasswordTests() {
+async function runPasswordTests() {
   console.log("=== 1. Testing Password Policy Validator ===");
-  const { validatePasswordPolicy } = require("../lib/security/password-policy");
+  const { validatePasswordPolicy } = await import("../lib/security/password-policy.ts");
 
   const testCases = [
     {
@@ -79,7 +79,7 @@ async function runDatabaseTests() {
 }
 
 async function main() {
-  const pwdOk = runPasswordTests();
+  const pwdOk = await runPasswordTests();
   const dbOk = await runDatabaseTests();
   if (pwdOk && dbOk) {
     console.log("🎉 ALL AUTHENTICATION SYSTEM TESTS PASSED SUCCESSFULLY!");

@@ -26,12 +26,38 @@ export async function POST(req: Request) {
     }
 
     const response = NextResponse.json({ success: true, message: "Logged out successfully" });
-    response.cookies.delete(OWNER_COOKIE_NAME);
+    response.cookies.set({
+      name: OWNER_COOKIE_NAME,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    response.cookies.set({
+      name: "dropai_session_token",
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
     return response;
   } catch (error) {
     console.error("Owner logout error:", error);
     const response = NextResponse.json({ success: true });
-    response.cookies.delete(OWNER_COOKIE_NAME);
+    response.cookies.set({
+      name: OWNER_COOKIE_NAME,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    response.cookies.set({
+      name: "dropai_session_token",
+      value: "",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
     return response;
   }
 }

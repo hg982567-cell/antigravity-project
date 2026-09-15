@@ -3,6 +3,7 @@ import { requireOwner, verifyOwnerReAuth } from "@/lib/auth/owner-session";
 import { prisma } from "@/lib/prisma";
 import { logOwnerAction } from "@/lib/security/owner-audit";
 import { getClientIp } from "@/lib/security/rate-limiter";
+import { revokeFirebaseRefreshTokens } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,10 @@ export async function POST(req: Request) {
         data: { isValid: false },
       });
 
+      if (targetUser.firebaseUid) {
+        await revokeFirebaseRefreshTokens(targetUser.firebaseUid).catch(() => null);
+      }
+
       await logOwnerAction({
         ownerId: owner.id,
         action: "USER_SUSPENDED",
@@ -181,6 +186,10 @@ export async function POST(req: Request) {
         where: { userId, isValid: true },
         data: { isValid: false },
       });
+
+      if (targetUser.firebaseUid) {
+        await revokeFirebaseRefreshTokens(targetUser.firebaseUid).catch(() => null);
+      }
 
       await logOwnerAction({
         ownerId: owner.id,
