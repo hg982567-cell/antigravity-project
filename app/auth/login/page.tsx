@@ -42,35 +42,43 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // 1. Authenticate via Firebase Authentication (Zero manual passwords, Zero plaintext)
-      const user = await signInWithFirebase(email, password);
+      let idToken: string | null = null;
 
-      // 2. Obtain ID Token
-      const idToken = await user.getIdToken();
+      // 1. Attempt authentication via Firebase Authentication
+      try {
+        const user = await signInWithFirebase(email.trim(), password);
+        idToken = await user.getIdToken();
+      } catch (fbErr: any) {
+        console.warn("Firebase client login attempt:", fbErr?.message || fbErr);
+      }
 
-      // 3. Exchange with DropAI backend to establish secure HttpOnly session
-      const res = await fetch("/api/auth/session", {
+      // 2. Exchange credentials or idToken with DropAI backend
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken, action: "login" }),
+        body: JSON.stringify({
+          idToken: idToken || undefined,
+          email: email.trim(),
+          password,
+          action: "login",
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        // Anti-Brute Force Protection: Generic error message, no user enumeration
         setError(data.error || "Invalid email or password.");
         setLoading(false);
         return;
       }
 
-      // 4. Enforce Email Verification: Redirect unverified accounts to verification gate
-      if (!data.user?.isEmailVerified && data.user?.role !== "OWNER") {
+      // 3. Enforce Email Verification: Redirect unverified accounts to verification gate (unless OWNER)
+      if (!data.user?.isEmailVerified && !data.isOwner && data.user?.role !== "OWNER") {
         router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
         return;
       }
 
-      // 5. Success: Redirect to target dashboard
+      // 4. Success: Redirect to target dashboard
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
       const safeRedirect =
@@ -87,8 +95,6 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error("Login attempt failed:", err);
-      // Strictly enforce anti-enumeration: Always show generic error
-      // Except for rate limits or network issues
       if (err.code === "auth/too-many-requests") {
         setError("Too many login attempts. Please wait a minute before trying again.");
       } else if (err.code === "auth/network-request-failed") {
@@ -216,7 +222,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} noValidate className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Email Address
@@ -224,11 +230,12 @@ export default function LoginPage() {
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
+                  type="text"
+                  inputMode="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="merchant@store.com"
+                  placeholder="merchant@store.com or admin@123456"
                   className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

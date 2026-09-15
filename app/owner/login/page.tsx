@@ -8,7 +8,7 @@ import { signInWithFirebase, signInWithGooglePopup } from "@/lib/firebase/client
 
 export default function OwnerLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("owner@dropai.io");
+  const [email, setEmail] = useState("admin@123456");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showMfa, setShowMfa] = useState(false);
@@ -165,7 +165,7 @@ export default function OwnerLoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} noValidate className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               Owner Email Identifier
@@ -173,11 +173,12 @@ export default function OwnerLoginPage() {
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
+                inputMode="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="owner@dropai.io or admin email"
+                placeholder="admin@123456 or owner email"
                 className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-600 font-mono"
               />
             </div>
