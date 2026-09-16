@@ -21,6 +21,7 @@ import {
   signUpWithFirebase,
   signInWithGooglePopup,
   isFirebaseConfigured,
+  formatFirebaseAuthError,
 } from "@/lib/firebase/client";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
 
@@ -140,12 +141,9 @@ export default function SignupPage() {
       }
     } catch (err: any) {
       console.error("Google sign-in error:", err);
-      if (err.code === "auth/popup-closed-by-user") {
-        // Ignored, user intentionally dismissed popup
-      } else if (err.code === "auth/popup-blocked") {
-        setError("Popup was blocked by your browser. Please allow popups for this site.");
-      } else {
-        setError("Google authentication was unsuccessful. Please try again or use email.");
+      const friendlyError = formatFirebaseAuthError(err);
+      if (friendlyError) {
+        setError(friendlyError);
       }
       setGoogleLoading(false);
     }

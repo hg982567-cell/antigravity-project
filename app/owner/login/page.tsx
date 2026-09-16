@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shield, Lock, ArrowRight, AlertTriangle, Terminal, Eye, EyeOff, Mail, KeyRound } from "lucide-react";
-import { signInWithFirebase, signInWithGooglePopup } from "@/lib/firebase/client";
+import { signInWithFirebase, signInWithGooglePopup, formatFirebaseAuthError } from "@/lib/firebase/client";
 
 export default function OwnerLoginPage() {
   const router = useRouter();
@@ -84,10 +84,10 @@ export default function OwnerLoginPage() {
       router.push("/owner/dashboard");
       router.refresh();
     } catch (err: any) {
-      if (err.code === "auth/popup-closed-by-user") {
-        // User closed modal
-      } else {
-        setError(err.message || "Owner Google authentication failed.");
+      console.error("Owner Google login error:", err);
+      const friendlyError = formatFirebaseAuthError(err);
+      if (friendlyError) {
+        setError(friendlyError);
       }
       setGoogleLoading(false);
     }

@@ -17,6 +17,7 @@ import {
   signInWithFirebase,
   signInWithGooglePopup,
   isFirebaseConfigured,
+  formatFirebaseAuthError,
 } from "@/lib/firebase/client";
 
 export default function LoginPage() {
@@ -142,12 +143,9 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error("Google sign in error:", err);
-      if (err.code === "auth/popup-closed-by-user") {
-        // Ignored
-      } else if (err.code === "auth/popup-blocked") {
-        setError("Popup was blocked by your browser. Please enable popups.");
-      } else {
-        setError("Google authentication failed. Please try again or use email.");
+      const friendlyError = formatFirebaseAuthError(err);
+      if (friendlyError) {
+        setError(friendlyError);
       }
       setGoogleLoading(false);
     }

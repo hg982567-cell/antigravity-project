@@ -59,6 +59,47 @@ export function getClientAuth(): Auth {
 }
 
 /**
+ * Translates Firebase Authentication error codes into human-readable, actionable diagnostic messages.
+ */
+export function formatFirebaseAuthError(err: any): string {
+  if (!err) return "An unexpected authentication error occurred.";
+
+  const code = err.code || "";
+  const message = err.message || "";
+
+  if (code === "auth/popup-closed-by-user") {
+    return ""; // User intentionally closed popup
+  }
+  if (code === "auth/popup-blocked") {
+    return "The sign-in popup was blocked by your browser. Please allow popups for this site and try again.";
+  }
+  if (code === "auth/unauthorized-domain") {
+    const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
+    return `Unauthorized Domain: "${domain}" is not authorized in your Firebase project. Please add it under Firebase Console -> Authentication -> Settings -> Authorized domains.`;
+  }
+  if (code === "auth/operation-not-allowed") {
+    return "Google Sign-In is not enabled in your Firebase project. Please enable Google provider under Firebase Console -> Authentication -> Sign-in method.";
+  }
+  if (code === "auth/invalid-api-key" || code === "auth/api-key-not-valid") {
+    return "Invalid Firebase API Key. Please check your NEXT_PUBLIC_FIREBASE_API_KEY environment variable.";
+  }
+  if (code === "auth/network-request-failed") {
+    return "Network error connecting to Firebase Authentication. Please check your internet connection.";
+  }
+  if (code === "auth/account-exists-with-different-credential") {
+    return "An account already exists with this email using a different sign-in method. Please sign in with your original credentials.";
+  }
+  if (code === "auth/cancelled-popup-request") {
+    return ""; // Ignored, duplicate popup
+  }
+  if (message.includes("Firebase Client is not configured") || message.includes("NEXT_PUBLIC_FIREBASE")) {
+    return "Firebase Client is not configured. Please add NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, and NEXT_PUBLIC_FIREBASE_PROJECT_ID to your environment variables (.env or Vercel).";
+  }
+
+  return message || "Google authentication failed. Please try again.";
+}
+
+/**
  * Sign up a new user with email and password via Firebase Authentication
  */
 export async function signUpWithFirebase(
