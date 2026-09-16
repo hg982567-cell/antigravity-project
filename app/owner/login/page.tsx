@@ -75,7 +75,15 @@ export default function OwnerLoginPage() {
         body: JSON.stringify({ idToken }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = {};
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        console.error("Non-JSON API response from /api/owner/auth/login:", res.status, text.slice(0, 150));
+        throw new Error(`Owner authentication server returned status ${res.status}. Please refresh and try again.`);
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Google account does not possess Platform Owner privileges.");
