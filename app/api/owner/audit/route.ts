@@ -16,9 +16,10 @@ export async function GET(req: Request) {
     if (targetType !== "ALL") where.targetType = targetType;
     if (severity !== "ALL") where.severity = severity;
     if (search) {
+      const isPostgres = process.env.DATABASE_URL?.startsWith("postgres");
       where.OR = [
-        { action: { contains: search, mode: "insensitive" } },
-        { targetId: { contains: search, mode: "insensitive" } },
+        { action: { contains: search, ...(isPostgres ? { mode: "insensitive" } : {}) } },
+        { targetId: { contains: search, ...(isPostgres ? { mode: "insensitive" } : {}) } },
         { ipAddress: { contains: search } },
       ];
     }

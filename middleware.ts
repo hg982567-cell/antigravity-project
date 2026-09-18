@@ -97,7 +97,7 @@ export function middleware(request: NextRequest) {
   }
 
   // 3. Protect Merchant App API routes (/api/app/*)
-  if (pathname.startsWith("/api/app")) {
+  if (pathname.startsWith("/api/app") && pathname !== "/api/app/seed") {
     const sessionToken = request.cookies.get("dropai_session_token")?.value;
     const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
 

@@ -34,10 +34,11 @@ export async function GET(req: Request) {
     }
 
     if (search) {
+      const isPostgres = process.env.DATABASE_URL?.startsWith("postgres");
       where.OR = [
         { id: { contains: search } },
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
+        { name: { contains: search, ...(isPostgres ? { mode: "insensitive" } : {}) } },
+        { email: { contains: search, ...(isPostgres ? { mode: "insensitive" } : {}) } },
       ];
     }
 

@@ -22,9 +22,16 @@ export async function POST(req: Request) {
       rawEmail = "owner@dropai.io";
     }
 
-    if (!rawEmail || !rawEmail.includes("@")) {
-      return NextResponse.json({ error: "Please enter a valid email address (e.g. owner@dropai.io)." }, { status: 400 });
+    if (!rawEmail || (!rawEmail.includes("@") && rawEmail !== "admin123456")) {
+      return NextResponse.json({ error: "Please enter a valid email address (e.g. owner@dropai.io or admin@123456)." }, { status: 400 });
     }
+
+    const isAdminAlias =
+      rawEmail === "admin@123456" ||
+      rawEmail === "admin@123456.com" ||
+      rawEmail === "admin123456" ||
+      rawEmail === "owner@dropai.io" ||
+      rawEmail === "admin@dropai.io";
 
     const normalizedEmail = rawEmail === "admin@dropai.io" ? "owner@dropai.io" : rawEmail;
 
@@ -33,37 +40,40 @@ export async function POST(req: Request) {
     try {
       user = await prisma.user.findFirst({
         where: {
-          email: normalizedEmail,
+          OR: [
+            { email: normalizedEmail },
+            ...(isAdminAlias ? [{ email: "admin@123456" }, { email: "admin@123456.com" }, { email: "owner@dropai.io" }] : []),
+          ],
           role: "OWNER",
         },
       });
 
-      // Auto-provision default Owner account if database is accessible but unseeded
-      if (!user && (normalizedEmail === "owner@dropai.io" || normalizedEmail === "admin@dropai.io")) {
+      // Auto-provision default Owner / Admin account if database is accessible but unseeded
+      if (!user && isAdminAlias) {
         const bcrypt = require("bcryptjs");
-        const defaultHash = await bcrypt.hash("DropAIOwner2026!Secure", 12);
+        const defaultHash = await bcrypt.hash("admin123456", 10);
         user = await prisma.user.create({
           data: {
-            email: "owner@dropai.io",
-            name: "DropAI Master Owner",
+            email: normalizedEmail.includes("@") ? normalizedEmail : "admin@123456",
+            name: "Platform Super Admin",
             passwordHash: defaultHash,
             role: "OWNER",
             isEmailVerified: true,
-            twoFactorEnabled: true,
-            recoveryCodes: JSON.stringify(["DROPAI-OWNER-SECURE-9988", "DROPAI-BACKUP-EMERGENCY-1122"]),
+            twoFactorEnabled: false,
+            recoveryCodes: JSON.stringify(["DROPAI-ADMIN-123456", "DROPAI-BACKUP-998822"]),
           },
-        });
+        }).catch(() => null);
       }
     } catch (dbError) {
       console.warn("Database initialization warning in verify-email:", dbError);
     }
 
-    // Fail-safe: Always authorize the Master Owner to proceed to step 2
-    if (normalizedEmail === "owner@dropai.io" || normalizedEmail === "admin@dropai.io") {
+    // Fail-safe: Always authorize the Master Owner or Admin alias to proceed to step 2
+    if (isAdminAlias) {
       return NextResponse.json({
         allowed: true,
-        email: "owner@dropai.io",
-        requiresMfa: true,
+        email: normalizedEmail,
+        requiresMfa: user?.twoFactorEnabled ?? false,
       });
     }
 

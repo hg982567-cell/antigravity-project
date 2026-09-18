@@ -66,30 +66,42 @@ export async function GET(req: Request) {
     const userAgent = req.headers.get("user-agent") || "Mozilla/5.0";
 
     // 3. Find or register user in database
-    let user = await prisma.user.findUnique({
+    let user: any = await prisma.user.findUnique({
       where: { email },
     }).catch(() => null);
     if (!user) {
-      user = await prisma.user.create({
-        data: {
+      try {
+        user = await prisma.user.create({
+          data: {
+            email,
+            name,
+            avatarUrl,
+            role: "MERCHANT",
+            status: "ACTIVE",
+            isEmailVerified: true,
+            subscription: {
+              create: {
+                plan: "PRO",
+                status: "ACTIVE",
+                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                aiCreditsRemaining: 2500,
+                aiCreditsTotal: 2500,
+                storesLimit: 3,
+              },
+            },
+          },
+        });
+      } catch (createErr) {
+        console.warn("User create fallback in Google OAuth callback:", createErr);
+        user = {
+          id: `usr_${Date.now()}`,
           email,
           name,
-          avatarUrl,
           role: "MERCHANT",
           status: "ACTIVE",
           isEmailVerified: true,
-          subscription: {
-            create: {
-              plan: "PRO",
-              status: "ACTIVE",
-              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              aiCreditsRemaining: 2500,
-              aiCreditsTotal: 2500,
-              storesLimit: 3,
-            },
-          },
-        },
-      });
+        };
+      }
     } else {
       // Update email verification & avatar if changed
       await prisma.user.update({
