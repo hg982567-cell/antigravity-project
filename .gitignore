@@ -31,3 +31,7 @@ yarn-error.log*
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Local Portable Tools
+.tools/
+

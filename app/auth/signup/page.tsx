@@ -65,47 +65,61 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      // 1. Create account via Firebase Authentication (Zero manual passwords; automatically dispatches verification email)
-      const user = await signUpWithFirebase(email, password, name);
+      // 1. Attempt client-side Firebase Authentication first if configured
+      let idToken: string | null = null;
+      try {
+        const user = await signUpWithFirebase(email, password, name);
+        idToken = await user.getIdToken();
+      } catch (fbErr: any) {
+        console.warn("Firebase client signup skipped/failed, switching to direct registration:", fbErr.message);
+      }
 
-      // 3. Obtain cryptographically signed Firebase ID token
-      const idToken = await user.getIdToken();
+      // 2. If Firebase ID token obtained, exchange with /api/auth/session
+      if (idToken) {
+        const res = await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idToken,
+            name,
+            action: "signup",
+          }),
+        });
 
-      // 4. Exchange ID token with DropAI backend to establish secure HttpOnly session
-      const res = await fetch("/api/auth/session", {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+          return;
+        }
+      }
+
+      // 3. Direct registration fallback via DropAI backend
+      const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idToken,
           name,
-          action: "signup",
+          email,
+          password,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Could not initialize merchant session. Please try again.");
+        setError(data.error || "Could not complete account creation. Please try again.");
         setLoading(false);
         return;
       }
 
-      // 5. Redirect to email verification enforcement screen
-      router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+      // Successfully registered and session cookie set
+      router.push("/app/dashboard");
     } catch (err: any) {
       console.error("Signup error:", err);
-      // Generic security error handling
-      if (err.code === "auth/email-already-in-use") {
-        setError("An account with this email address already exists. Please sign in.");
-      } else if (err.code === "auth/invalid-email") {
-        setError("Please enter a valid email address.");
-      } else if (err.code === "auth/weak-password") {
-        setError("Password is too weak. Please choose a stronger password.");
-      } else {
-        setError(err.message || "Could not complete account creation. Please try again.");
-      }
+      setError(err.message || "Could not complete account creation. Please try again.");
       setLoading(false);
     }
+
   };
 
   const handleGoogleSignIn = async () => {
