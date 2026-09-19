@@ -91,20 +91,6 @@ export async function POST(req: Request) {
           },
         },
       });
-
-      // Provision initial merchant store
-      if (user?.id) {
-        await prisma.store.create({
-          data: {
-            userId: user.id,
-            name: businessName || `${cleanName}'s Store`,
-            platform: "SHOPIFY",
-            currency: "USD",
-            country: "US",
-            status: "CONNECTED",
-          },
-        }).catch(() => null);
-      }
     } catch (createErr) {
       console.warn("User DB creation fallback in signup:", createErr);
       user = {
