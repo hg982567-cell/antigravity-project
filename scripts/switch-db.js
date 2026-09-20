@@ -30,6 +30,12 @@ if (target === "postgres" || target === "postgresql") {
 
 if (isPostgres) {
   schema = schema.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
+  if (process.env.DIRECT_URL && !schema.includes("directUrl")) {
+    schema = schema.replace(
+      /url\s*=\s*env\("DATABASE_URL"\)/,
+      'url       = env("DATABASE_URL")\n  directUrl = env("DIRECT_URL")'
+    );
+  }
   fs.writeFileSync(schemaPath, schema);
   console.log("✅ Configured Prisma for Cloud PostgreSQL (Vercel & Production)");
 } else {

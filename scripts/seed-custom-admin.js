@@ -55,6 +55,54 @@ async function main() {
 
     console.log(`✅ Provisioned Owner Admin account: ${user.email} (Role: ${user.role}, Status: ${user.status})`);
   }
+
+  // Provision Demo Merchant Account
+  const demoPassword = "password123";
+  const demoHash = await bcrypt.hash(demoPassword, 10);
+  const demoEmails = ["demo@dropai.io", "demo@example.com"];
+
+  for (const email of demoEmails) {
+    const demoUser = await prisma.user.upsert({
+      where: { email },
+      update: {
+        role: "MERCHANT",
+        status: "ACTIVE",
+        isEmailVerified: true,
+        passwordHash: demoHash,
+        name: "Alex Rivera",
+      },
+      create: {
+        email,
+        name: "Alex Rivera",
+        role: "MERCHANT",
+        status: "ACTIVE",
+        isEmailVerified: true,
+        passwordHash: demoHash,
+      },
+    });
+
+    await prisma.subscription.upsert({
+      where: { userId: demoUser.id },
+      update: {
+        plan: "PRO",
+        status: "ACTIVE",
+        aiCreditsRemaining: 5000,
+        aiCreditsTotal: 5000,
+        storesLimit: 5,
+      },
+      create: {
+        userId: demoUser.id,
+        plan: "PRO",
+        status: "ACTIVE",
+        aiCreditsRemaining: 5000,
+        aiCreditsTotal: 5000,
+        storesLimit: 5,
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    }).catch(() => null);
+
+    console.log(`✅ Provisioned Demo Merchant account: ${demoUser.email}`);
+  }
 }
 
 main()
