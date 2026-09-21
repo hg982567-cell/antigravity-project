@@ -9,6 +9,26 @@ if (!fs.existsSync(schemaPath)) {
   process.exit(1);
 }
 
+const envPath = path.join(__dirname, "..", ".env");
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, "utf8");
+  for (const rawLine of envContent.split("\n")) {
+    const line = rawLine.trim();
+    if (line && !line.startsWith("#")) {
+      const match = line.match(/^([A-Za-z0-9_]+)=(.*)$/);
+      if (match) {
+        let val = match[2].trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!process.env[match[1]]) {
+          process.env[match[1]] = val;
+        }
+      }
+    }
+  }
+}
+
 let schema = fs.readFileSync(schemaPath, "utf8");
 const dbUrl = (process.env.DATABASE_URL || "").trim();
 

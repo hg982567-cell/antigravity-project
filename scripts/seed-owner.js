@@ -7,7 +7,7 @@ async function main() {
   console.log("🌱 Ensuring Owner and Seed Data in database...");
 
   // 1. Ensure Owner account exists
-  let owner = await prisma.user.findFirst({ where: { role: "OWNER" } });
+  let owner = await prisma.user.findUnique({ where: { email: "owner@dropai.io" } });
   if (!owner) {
     const passwordHash = await bcrypt.hash("DropAIOwner2026!Secure", 12);
     owner = await prisma.user.create({
