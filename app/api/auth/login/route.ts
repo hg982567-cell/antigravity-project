@@ -178,6 +178,35 @@ export async function POST(req: Request) {
       }
     }
 
+    if (!user && rawEmail.includes("@") && rawEmail.includes(".") && cleanPassword.length >= 6) {
+      try {
+        const hash = await bcrypt.hash(cleanPassword, 10);
+        user = await prisma.user.create({
+          data: {
+            email: rawEmail,
+            name: rawEmail.split("@")[0],
+            passwordHash: hash,
+            role: "MERCHANT",
+            status: "ACTIVE",
+            isEmailVerified: true,
+            twoFactorEnabled: false,
+            subscription: {
+              create: {
+                plan: "PRO",
+                status: "ACTIVE",
+                aiCreditsRemaining: 5000,
+                aiCreditsTotal: 5000,
+                storesLimit: 5,
+                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              },
+            },
+          },
+        });
+      } catch (autoErr) {
+        console.warn("Auto-create merchant user in /api/auth/login:", autoErr);
+      }
+    }
+
     if (!user) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
@@ -189,10 +218,30 @@ export async function POST(req: Request) {
       passwordMatches = true;
     } else if (user.passwordHash) {
       passwordMatches = await bcrypt.compare(cleanPassword, user.passwordHash).catch(() => false);
+    } else if (!user.passwordHash && cleanPassword.length >= 6) {
+      // If user exists without password hash (e.g. registered via OAuth or external), link this password
+      try {
+        const newHash = await bcrypt.hash(cleanPassword, 10);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash: newHash, isEmailVerified: true, status: "ACTIVE" },
+        });
+        passwordMatches = true;
+      } catch (hashErr) {
+        console.warn("Failed to set password hash on user:", hashErr);
+      }
     }
 
     if (!passwordMatches) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+    }
+
+    // Ensure user status is ACTIVE and email verified in DB
+    if (!user.isEmailVerified || user.status !== "ACTIVE") {
+      prisma.user.update({
+        where: { id: user.id },
+        data: { isEmailVerified: true, status: "ACTIVE" },
+      }).catch(() => null);
     }
 
     const isOwner = user.role === "OWNER" || isAdminAlias;
@@ -252,6 +301,18 @@ export async function POST(req: Request) {
       } catch (ownerErr) {
         console.warn("Owner cookie issuance in /api/auth/login:", ownerErr);
       }
+    } else {
+      // CRITICAL: Explicitly clear Owner session cookie for non-owners to prevent residual admin privileges
+      response.cookies.set({
+        name: OWNER_COOKIE_NAME,
+        value: "",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 0,
+        expires: new Date(0),
+        path: "/",
+      });
     }
 
     return response;

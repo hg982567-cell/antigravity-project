@@ -34,6 +34,7 @@ interface SidebarProps {
   setIsCollapsed: (collapsed: boolean) => void;
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
+  isOwner?: boolean;
 }
 
 export function Sidebar({
@@ -41,6 +42,7 @@ export function Sidebar({
   setIsCollapsed,
   mobileOpen,
   setMobileOpen,
+  isOwner = false,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -194,34 +196,36 @@ export function Sidebar({
           ))}
         </div>
 
-        {/* Dedicated Owner Command Center Entry Point */}
-        <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
-          <Link
-            href="/owner/dashboard"
-            onClick={() => setMobileOpen(false)}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold text-xs transition-all group relative",
-              isCollapsed && "justify-center px-0 py-2.5"
-            )}
-            title={isCollapsed ? "Owner Super Admin Control Center" : undefined}
-          >
-            <Shield className="w-4 h-4 shrink-0 text-amber-500 stroke-[2.5]" />
-            {!isCollapsed && (
-              <>
-                <span className="truncate flex-1">Owner Admin</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-black tracking-wider">
-                  ROOT
-                </span>
-              </>
-            )}
+        {/* Dedicated Owner Command Center Entry Point - ONLY VISIBLE TO PLATFORM OWNER */}
+        {isOwner && (
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
+            <Link
+              href="/owner/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold text-xs transition-all group relative",
+                isCollapsed && "justify-center px-0 py-2.5"
+              )}
+              title={isCollapsed ? "Owner Super Admin Control Center" : undefined}
+            >
+              <Shield className="w-4 h-4 shrink-0 text-amber-500 stroke-[2.5]" />
+              {!isCollapsed && (
+                <>
+                  <span className="truncate flex-1">Owner Admin</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-black tracking-wider">
+                    ROOT
+                  </span>
+                </>
+              )}
 
-            {isCollapsed && (
-              <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-amber-400 text-xs rounded-md shadow-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap font-bold">
-                Owner Admin
-              </span>
-            )}
-          </Link>
-        </div>
+              {isCollapsed && (
+                <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-amber-400 text-xs rounded-md shadow-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap font-bold">
+                  Owner Admin
+                </span>
+              )}
+            </Link>
+          </div>
+        )}
 
         {/* Expand button when collapsed */}
         {isCollapsed && (

@@ -116,23 +116,29 @@ export async function verifyFirebaseIdToken(idToken: string, checkRevoked: boole
     console.warn("Google tokeninfo verification failed, falling back to safe decode:", err);
   }
 
-  // 3. Fallback: Parse JWT payload cleanly with base64url support
+  // 3. Fallback: Parse and validate Firebase JWT payload cleanly
   try {
     const parts = idToken.split(".");
     if (parts.length === 3) {
       const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(Buffer.from(base64, "base64").toString("utf-8"));
-      return {
-        uid: payload.user_id || payload.sub || `usr_dev_${Date.now()}`,
-        email: (payload.email || "developer@dropai.io").toLowerCase().trim(),
-        email_verified: Boolean(payload.email_verified),
-        name: payload.name || "DropAI User",
-        picture: payload.picture || null,
-        role: payload.role || "MERCHANT",
-        admin: Boolean(payload.admin),
-      };
+      if (payload && (payload.user_id || payload.sub)) {
+        const uid = payload.user_id || payload.sub;
+        const email = (payload.email || "").toLowerCase().trim();
+        return {
+          uid,
+          email: email || `user_${uid.slice(0, 8)}@dropai.io`,
+          email_verified: Boolean(payload.email_verified),
+          name: payload.name || (email ? email.split("@")[0] : "DropAI User"),
+          picture: payload.picture || null,
+          role: payload.role || (payload.admin ? "OWNER" : "MERCHANT"),
+          admin: Boolean(payload.admin),
+        };
+      }
     }
-  } catch {}
+  } catch (parseErr) {
+    console.warn("JWT payload parse error in verifyFirebaseIdToken:", parseErr);
+  }
 
   return null;
 }

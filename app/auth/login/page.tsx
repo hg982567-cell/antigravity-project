@@ -43,24 +43,11 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      let idToken: string | null = null;
-
-      // 1. Attempt authentication via Firebase Authentication only if standard email format
-      if (email.includes("@") && email.includes(".")) {
-        try {
-          const user = await signInWithFirebase(email.trim(), password);
-          idToken = await user.getIdToken();
-        } catch (fbErr: any) {
-          console.warn("Firebase client login attempt:", fbErr?.message || fbErr);
-        }
-      }
-
-      // 2. Exchange credentials or idToken with DropAI backend
+      // Direct authentication via DropAI backend
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idToken: idToken || undefined,
           email: email.trim(),
           password,
           action: "login",
@@ -83,13 +70,8 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Enforce Email Verification: Redirect unverified accounts to verification gate (unless OWNER)
-      if (!data.user?.isEmailVerified && !data.isOwner && data.user?.role !== "OWNER") {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
-        return;
-      }
-
-      // 4. Success: Redirect to target dashboard
+      // Success: Determine target dashboard based on authoritative role
+      const isOwner = Boolean(data.isOwner || data.user?.role === "OWNER");
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
       const safeRedirect =
@@ -97,13 +79,14 @@ export default function LoginPage() {
           ? redirectUrl
           : null;
 
-      if (safeRedirect) {
+      if (safeRedirect && (!safeRedirect.startsWith("/owner") || isOwner)) {
         router.push(safeRedirect);
-      } else if (data.isOwner || data.user?.role === "OWNER") {
+      } else if (isOwner) {
         router.push("/owner/dashboard");
       } else {
         router.push("/app/dashboard");
       }
+      router.refresh();
     } catch (err: any) {
       console.error("Login attempt failed:", err);
       if (err.code === "auth/too-many-requests") {

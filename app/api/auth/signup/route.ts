@@ -3,6 +3,7 @@ import { POST as handleSessionPost } from "@/app/api/auth/session/route";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createDatabaseSession, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from "@/lib/auth/session";
+import { OWNER_COOKIE_NAME } from "@/lib/auth/owner-session";
 import { getClientIp, checkRateLimit } from "@/lib/security/rate-limiter";
 
 export const dynamic = "force-dynamic";
@@ -133,6 +134,18 @@ export async function POST(req: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: SESSION_MAX_AGE,
+      path: "/",
+    });
+
+    // Proactively clear any residual Owner cookie for new signups
+    response.cookies.set({
+      name: OWNER_COOKIE_NAME,
+      value: "",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0,
+      expires: new Date(0),
       path: "/",
     });
 

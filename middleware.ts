@@ -91,19 +91,22 @@ export function middleware(request: NextRequest) {
     const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
     const sessionToken = request.cookies.get("dropai_session_token")?.value;
 
-    let hasOwnerAccess = Boolean(ownerToken);
-    if (!hasOwnerAccess && sessionToken) {
-      const payload = decodeJwtPayload(sessionToken);
-      if (
-        payload &&
-        (payload.role === "OWNER" ||
-          payload.email === "admin@123456" ||
-          payload.email === "admin@123456.com" ||
-          payload.email === "owner@dropai.io")
-      ) {
-        hasOwnerAccess = true;
-      }
+    const ownerPayload = ownerToken ? decodeJwtPayload(ownerToken) : null;
+    const sessionPayload = sessionToken ? decodeJwtPayload(sessionToken) : null;
+
+    // Strict Isolation: Users authenticated as normal MERCHANTS are strictly blocked from /owner/*
+    if (sessionPayload && sessionPayload.role === "MERCHANT") {
+      const loginUrl = new URL("/owner/login", request.url);
+      return NextResponse.redirect(loginUrl);
     }
+
+    const hasOwnerAccess =
+      (ownerPayload && ownerPayload.role === "OWNER") ||
+      (sessionPayload &&
+        (sessionPayload.role === "OWNER" ||
+          sessionPayload.email === "admin@123456" ||
+          sessionPayload.email === "admin@123456.com" ||
+          sessionPayload.email === "owner@dropai.io"));
 
     if (!hasOwnerAccess) {
       // Redirect unauthenticated visitors directly to /owner/login
@@ -146,19 +149,24 @@ export function middleware(request: NextRequest) {
       const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
       const sessionToken = request.cookies.get("dropai_session_token")?.value;
 
-      let hasOwnerAccess = Boolean(ownerToken);
-      if (!hasOwnerAccess && sessionToken) {
-        const payload = decodeJwtPayload(sessionToken);
-        if (
-          payload &&
-          (payload.role === "OWNER" ||
-            payload.email === "admin@123456" ||
-            payload.email === "admin@123456.com" ||
-            payload.email === "owner@dropai.io")
-        ) {
-          hasOwnerAccess = true;
-        }
+      const ownerPayload = ownerToken ? decodeJwtPayload(ownerToken) : null;
+      const sessionPayload = sessionToken ? decodeJwtPayload(sessionToken) : null;
+
+      // Strict Isolation: Merchant accounts cannot access owner APIs
+      if (sessionPayload && sessionPayload.role === "MERCHANT") {
+        return NextResponse.json(
+          { error: "Access Denied: Merchant accounts cannot access Owner APIs." },
+          { status: 403 }
+        );
       }
+
+      const hasOwnerAccess =
+        (ownerPayload && ownerPayload.role === "OWNER") ||
+        (sessionPayload &&
+          (sessionPayload.role === "OWNER" ||
+            sessionPayload.email === "admin@123456" ||
+            sessionPayload.email === "admin@123456.com" ||
+            sessionPayload.email === "owner@dropai.io"));
 
       if (!hasOwnerAccess) {
         return NextResponse.json(

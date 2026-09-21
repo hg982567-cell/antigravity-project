@@ -65,41 +65,13 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      // 1. Attempt client-side Firebase Authentication first if configured
-      let idToken: string | null = null;
-      try {
-        const user = await signUpWithFirebase(email, password, name);
-        idToken = await user.getIdToken();
-      } catch (fbErr: any) {
-        console.warn("Firebase client signup skipped/failed, switching to direct registration:", fbErr.message);
-      }
-
-      // 2. If Firebase ID token obtained, exchange with /api/auth/session
-      if (idToken) {
-        const res = await fetch("/api/auth/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            idToken,
-            name,
-            action: "signup",
-          }),
-        });
-
-        const data = await res.json().catch(() => ({}));
-        if (res.ok && data.success) {
-          router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
-          return;
-        }
-      }
-
-      // 3. Direct registration fallback via DropAI backend
+      // 1. Authoritative registration via DropAI backend (creates DB record with bcrypt passwordHash & session)
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          email,
+          name: name.trim(),
+          email: email.trim(),
           password,
         }),
       });
@@ -112,8 +84,16 @@ export default function SignupPage() {
         return;
       }
 
-      // Successfully registered and session cookie set
+      // 2. Best-effort background sync with Firebase client if configured
+      try {
+        await signUpWithFirebase(email.trim(), password, name.trim());
+      } catch (fbErr: any) {
+        console.warn("Silent Firebase client sync note:", fbErr?.message || fbErr);
+      }
+
+      // Successfully registered and merchant session established
       router.push("/app/dashboard");
+      router.refresh();
     } catch (err: any) {
       console.error("Signup error:", err);
       setError(err.message || "Could not complete account creation. Please try again.");

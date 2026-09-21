@@ -161,40 +161,43 @@ export async function POST(req: Request) {
         });
       }
 
-      // Auto-provision if missing or upgrade to OWNER
+      // Only allow recognized owner aliases or verified OWNER role users
       if (!user) {
-        const defaultHash = await bcrypt.hash(password, 10);
-        user = await prisma.user.create({
-          data: {
-            email: rawEmail.includes("@") ? rawEmail : "admin@123456",
-            name: "Platform Super Admin",
-            passwordHash: defaultHash,
-            role: "OWNER",
-            status: "ACTIVE",
-            isEmailVerified: true,
-            twoFactorEnabled: false,
-            recoveryCodes: JSON.stringify(["DROPAI-ADMIN-123456", "DROPAI-BACKUP-998822"]),
-          },
-        });
-      } else if (user.role !== "OWNER") {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { role: "OWNER", status: "ACTIVE", isEmailVerified: true },
-        });
-        user.role = "OWNER";
+        if (isAdminAlias) {
+          const defaultHash = await bcrypt.hash(password, 10);
+          user = await prisma.user.create({
+            data: {
+              email: rawEmail.includes("@") ? rawEmail : "admin@123456",
+              name: "Platform Super Admin",
+              passwordHash: defaultHash,
+              role: "OWNER",
+              status: "ACTIVE",
+              isEmailVerified: true,
+              twoFactorEnabled: false,
+              recoveryCodes: JSON.stringify(["DROPAI-ADMIN-123456", "DROPAI-BACKUP-998822"]),
+            },
+          });
+        } else {
+          return NextResponse.json(
+            { error: "Access Denied: Invalid Platform Owner credentials." },
+            { status: 401 }
+          );
+        }
+      } else if (user.role !== "OWNER" && !isAdminAlias) {
+        return NextResponse.json(
+          { error: "Access Denied: Merchant accounts cannot access the Platform Owner Center." },
+          { status: 403 }
+        );
       }
     } catch (dbErr) {
       console.warn("Database lookup bypassed during owner login (offline DB):", dbErr);
     }
 
     if (!user) {
-      user = {
-        id: "owner_system_master",
-        email: rawEmail || "admin@123456",
-        name: "Platform Super Admin",
-        role: "OWNER",
-        twoFactorEnabled: false,
-      };
+      return NextResponse.json(
+        { error: "Access Denied: Invalid Platform Owner credentials." },
+        { status: 401 }
+      );
     }
 
     const isMasterPassword =

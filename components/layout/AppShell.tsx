@@ -155,6 +155,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         setIsCollapsed={setIsCollapsed}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
+        isOwner={isOwner}
       />
 
       {/* Main Content Area */}

@@ -26,7 +26,8 @@ export async function GET() {
     const user = await getCurrentUser();
     const owner = await getCurrentOwner();
 
-    const isOwner = !!owner || user?.role === "OWNER";
+    // If user is authenticated as a merchant, they are strictly NOT owner
+    const isOwner = user ? user.role === "OWNER" : Boolean(owner);
     const effectiveUser: any =
       user ||
       (owner
@@ -52,7 +53,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       authenticated: true,
       user: {
         id: effectiveUser.id,
@@ -68,6 +69,22 @@ export async function GET() {
       },
       isOwner,
     });
+
+    // If merchant is logged in, proactively clear any lingering owner cookie
+    if (user && user.role !== "OWNER") {
+      response.cookies.set({
+        name: OWNER_COOKIE_NAME,
+        value: "",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 0,
+        expires: new Date(0),
+        path: "/",
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error("GET /api/auth/session error:", error);
     return NextResponse.json(
@@ -321,6 +338,18 @@ export async function POST(req: Request) {
       } catch (err) {
         console.warn("Owner session creation error:", err);
       }
+    } else {
+      // Proactively clear Owner session cookie for merchants
+      response.cookies.set({
+        name: OWNER_COOKIE_NAME,
+        value: "",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 0,
+        expires: new Date(0),
+        path: "/",
+      });
     }
 
     // Log security event safely
