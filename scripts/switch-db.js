@@ -50,17 +50,31 @@ if (target === "postgres" || target === "postgresql") {
 
 if (isPostgres) {
   schema = schema.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
-  if (process.env.DIRECT_URL && !schema.includes("directUrl")) {
-    schema = schema.replace(
-      /url\s*=\s*env\("DATABASE_URL"\)/,
-      'url       = env("DATABASE_URL")\n  directUrl = env("DIRECT_URL")'
-    );
+  const directVar = process.env.DIRECT_URL
+    ? "DIRECT_URL"
+    : process.env.DATABASE_URL_UNPOOLED
+    ? "DATABASE_URL_UNPOOLED"
+    : process.env.POSTGRES_URL_NON_POOLING
+    ? "POSTGRES_URL_NON_POOLING"
+    : null;
+
+  if (directVar) {
+    if (!schema.includes("directUrl")) {
+      schema = schema.replace(
+        /url\s*=\s*env\("DATABASE_URL"\)/,
+        `url       = env("DATABASE_URL")\n  directUrl = env("${directVar}")`
+      );
+    } else {
+      schema = schema.replace(/directUrl\s*=\s*env\("[^"]+"\)/, `directUrl = env("${directVar}")`);
+    }
+  } else {
+    schema = schema.replace(/\s*directUrl\s*=\s*env\("[^"]+"\)/, "");
   }
   fs.writeFileSync(schemaPath, schema);
   console.log("✅ Configured Prisma for Cloud PostgreSQL (Vercel & Production)");
 } else {
   schema = schema.replace(/provider\s*=\s*"postgresql"/, 'provider = "sqlite"');
-  schema = schema.replace(/\s*directUrl\s*=\s*env\("DIRECT_URL"\)/, "");
+  schema = schema.replace(/\s*directUrl\s*=\s*env\("[^"]+"\)/, "");
   fs.writeFileSync(schemaPath, schema);
   console.log("✅ Configured Prisma for Local SQLite (file:./dev.db)");
 }
