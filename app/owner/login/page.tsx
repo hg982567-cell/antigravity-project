@@ -25,13 +25,15 @@ export default function OwnerLoginPage() {
     try {
       let idToken: string | null = null;
 
-      // 1. Attempt authentication via Firebase
-      try {
-        const user = await signInWithFirebase(email.trim(), password);
-        idToken = await user.getIdToken();
-      } catch (fbErr: any) {
-        // If Firebase is not configured or in dev mode, allow backend fallback
-        console.warn("Firebase sign-in note:", fbErr.message);
+      // 1. Attempt authentication via Firebase only if valid domain format
+      if (email.includes("@") && email.includes(".")) {
+        try {
+          const user = await signInWithFirebase(email.trim(), password);
+          idToken = await user.getIdToken();
+        } catch (fbErr: any) {
+          // If Firebase is not configured or in dev mode, allow backend fallback
+          console.warn("Firebase sign-in note:", fbErr.message);
+        }
       }
 
       // 2. Transmit to Owner authentication endpoint
@@ -46,13 +48,48 @@ export default function OwnerLoginPage() {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = {};
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        console.error("Non-JSON API response from /api/owner/auth/login:", res.status, text.slice(0, 150));
+        throw new Error(`Owner server returned status ${res.status}. Please check server logs or refresh.`);
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Authentication failed. Please verify owner credentials.");
       }
 
       // Success: redirect to Owner Command Center
+      router.push("/owner/dashboard");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || "Authentication rejected.");
+      setLoading(false);
+    }
+  };
+
+  const handleQuickAdminLogin = async () => {
+    setEmail("admin@123456");
+    setPassword("admin123456");
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/owner/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "admin@123456",
+          password: "admin123456",
+        }),
+      });
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await res.json() : {};
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Authentication failed. Please verify owner credentials.");
+      }
       router.push("/owner/dashboard");
       router.refresh();
     } catch (err: any) {
@@ -172,6 +209,19 @@ export default function OwnerLoginPage() {
             <span>{error}</span>
           </div>
         )}
+
+        {/* 1-Click Master Admin Login Shortcut */}
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={handleQuickAdminLogin}
+            disabled={loading}
+            className="w-full py-2.5 px-4 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 rounded-2xl text-xs font-semibold text-amber-300 transition-all flex items-center justify-center gap-2 shadow-sm font-mono"
+          >
+            <Terminal className="w-4 h-4 text-amber-400" />
+            <span>⚡ 1-Click Master Admin Login (admin@123456)</span>
+          </button>
+        </div>
 
         <form onSubmit={handleLogin} noValidate className="space-y-4">
           <div>

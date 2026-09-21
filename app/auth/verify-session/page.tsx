@@ -15,8 +15,9 @@ export default function VerifySessionPage() {
         const data = await res.json();
         if (data.authenticated) {
           setStatus("Session verified. Redirecting to your dashboard...");
+          const target = data.isOwner || data.user?.role === "OWNER" ? "/owner/dashboard" : "/app/dashboard";
           setTimeout(() => {
-            router.replace("/app/dashboard");
+            router.replace(target);
           }, 600);
         } else {
           setStatus("Session expired. Redirecting to sign in...");

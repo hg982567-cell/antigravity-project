@@ -57,9 +57,9 @@ export interface PasswordValidationResult {
 export function validatePasswordPolicy(password: string, email?: string): PasswordValidationResult {
   const errors: string[] = [];
 
-  const minLength = (password || "").length >= 12;
+  const minLength = (password || "").length >= 8;
   if (!minLength) {
-    errors.push("Password must be at least 12 characters long.");
+    errors.push("Password must be at least 8 characters long.");
   }
 
   const hasUpper = /[A-Z]/.test(password || "");

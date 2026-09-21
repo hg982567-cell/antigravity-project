@@ -42,7 +42,7 @@ export default function SignupPage() {
   }, [password, email]);
 
   const passwordChecks = [
-    { label: "At least 12 characters", valid: password.length >= 12 },
+    { label: "At least 8 characters", valid: password.length >= 8 },
     { label: "Uppercase letter (A-Z)", valid: /[A-Z]/.test(password) },
     { label: "Lowercase letter (a-z)", valid: /[a-z]/.test(password) },
     { label: "Number (0-9)", valid: /[0-9]/.test(password) },
