@@ -13,9 +13,10 @@ async function testNeon() {
   const products = await prisma.product.count();
   const orders = await prisma.order.count();
   const logs = await prisma.ownerAuditLog.count();
+  const plans = await prisma.subscriptionPlan.count();
 
   console.log("Connected successfully to Neon Cloud PostgreSQL!");
-  console.log("Database Stats:", { stores, products, orders, ownerAuditLogs: logs });
+  console.log("Database Stats:", { stores, products, orders, ownerAuditLogs: logs, subscriptionPlans: plans });
   await prisma.$disconnect();
 }
 
