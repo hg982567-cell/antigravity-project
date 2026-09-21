@@ -117,41 +117,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = async (quickEmail: string, quickPass: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: quickEmail, password: quickPass, action: "login" }),
-      });
-      const contentType = res.headers.get("content-type") || "";
-      let data: any = {};
-      if (contentType.includes("application/json")) {
-        data = await res.json();
-      } else {
-        const text = await res.text();
-        throw new Error(`Authentication server returned status ${res.status}. Please refresh and try again.`);
-      }
-      if (!res.ok || !data.success) {
-        setError(data.error || "Login failed. Please verify credentials.");
-        setLoading(false);
-        return;
-      }
-      if (data.isOwner || data.user?.role === "OWNER") {
-        router.push("/owner/dashboard");
-      } else {
-        router.push("/app/dashboard");
-      }
-    } catch (err: any) {
-      setError(err.message || "Login failed.");
-      setLoading(false);
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     setError(null);
     setGoogleLoading(true);
@@ -272,31 +237,6 @@ export default function LoginPage() {
               <span>{error}</span>
             </div>
           )}
-          {/* Quick Access Test Shortcuts */}
-          <div className="mb-4 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("demo@example.com", "password123")}
-              disabled={loading || googleLoading}
-              className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-left"
-            >
-              <div className="text-[11px] font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                <span>⚡ Demo Merchant</span>
-              </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">demo@example.com</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("admin@123456", "admin123456")}
-              disabled={loading || googleLoading}
-              className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors text-left"
-            >
-              <div className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
-                <span>🛡️ Super Admin</span>
-              </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">admin@123456</div>
-            </button>
-          </div>
 
           <form onSubmit={handleLogin} noValidate className="space-y-4">
             <div>
