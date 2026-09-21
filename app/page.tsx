@@ -62,7 +62,7 @@ export default async function HomePage() {
                 href="/app/dashboard"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                Launch Platform (Instant Demo)
+                Launch Platform
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
@@ -491,7 +491,7 @@ export default async function HomePage() {
                     </ul>
                   </div>
                   <Link href="/app/dashboard" className="mt-8 w-full block text-center py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
-                    Launch Starter Demo
+                    Start with Starter
                   </Link>
                 </div>
                 <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border-2 border-blue-600 dark:border-blue-500 flex flex-col justify-between relative shadow-xl">
@@ -576,7 +576,7 @@ export default async function HomePage() {
                 href="/app/dashboard"
                 className="px-8 py-3.5 rounded-xl bg-white text-blue-600 font-bold text-sm shadow-md hover:bg-blue-50 transition-colors"
               >
-                Launch Platform (Demo Mode)
+                Launch Platform
               </Link>
               <Link
                 href="/app/dashboard"

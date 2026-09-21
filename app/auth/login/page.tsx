@@ -290,15 +290,6 @@ export default function LoginPage() {
               Create merchant account
             </Link>
           </div>
-
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-            <Link
-              href="/owner/login"
-              className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:underline"
-            >
-              <span>⚡ Platform Owner? Access Super Admin Center →</span>
-            </Link>
-          </div>
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">

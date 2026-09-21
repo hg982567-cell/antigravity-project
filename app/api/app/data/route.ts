@@ -8,12 +8,13 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || "dashboard";
-    const isDemo = searchParams.get("demo") !== "false";
 
     const user = await getCurrentUser();
-    let userId = user?.id;
+    if (!user || !user.id) {
+      return NextResponse.json({ error: "Unauthorized: Authentication required." }, { status: 401 });
+    }
 
-    if (user?.isSuspended) {
+    if (user.isSuspended || user.status === "SUSPENDED") {
       return NextResponse.json(
         {
           error: "ACCOUNT_SUSPENDED",
@@ -24,79 +25,9 @@ export async function GET(req: Request) {
       );
     }
 
-    let isAccountSuspended = false;
-    let suspendedReason = "";
-
-    if (isDemo || !userId) {
-      let demoUser = await prisma.user.findFirst({ where: { email: "demo@dropai.io" } }).catch(() => null);
-      if (!demoUser) {
-        try {
-          const bcrypt = require("bcryptjs");
-          const passwordHash = await bcrypt.hash("password123", 10);
-          demoUser = await prisma.user.create({
-            data: {
-              email: "demo@dropai.io",
-              name: "Alex Rivera",
-              passwordHash,
-              role: "MERCHANT",
-              isEmailVerified: true,
-              subscription: {
-                create: {
-                  plan: "PRO",
-                  status: "ACTIVE",
-                  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                  aiCreditsRemaining: 2500,
-                  aiCreditsTotal: 2500,
-                  storesLimit: 3,
-                },
-              },
-            },
-          });
-        } catch {
-          demoUser = {
-            id: "demo_merchant_user",
-            email: "demo@dropai.io",
-            name: "Alex Rivera",
-            role: "MERCHANT",
-            isSuspended: false,
-          } as any;
-        }
-      }
-      userId = demoUser?.id || "demo_merchant_user";
-      if (demoUser?.isSuspended) {
-        isAccountSuspended = true;
-        suspendedReason = demoUser.suspendedReason || "Demo merchant account has been suspended by Platform Administrator.";
-      }
-    }
-
-    if (isAccountSuspended) {
-      return NextResponse.json(
-        {
-          error: "ACCOUNT_SUSPENDED",
-          isSuspended: true,
-          suspendedReason,
-        },
-        { status: 403 }
-      );
-    }
-
-    if (!userId) {
-      userId = "demo_merchant_user";
-    }
+    const userId = user.id;
 
     if (type === "dashboard") {
-      if (!isDemo && !user) {
-        return NextResponse.json({
-          isDemo: false,
-          hasStores: false,
-          totalRevenue: 0,
-          totalProfit: 0,
-          ordersCount: 0,
-          orders: [],
-          chartData: [],
-        });
-      }
-
       const [orders, products, adCampaigns, notifications, suppliers] = await Promise.all([
         prisma.order.findMany({
           where: { userId },
@@ -114,14 +45,14 @@ export async function GET(req: Request) {
       const totalProfit = orders.reduce((acc, o) => acc + o.profitAmount, 0);
 
       return NextResponse.json({
-        isDemo,
+        isDemo: false,
         hasStores: true,
         totalRevenue,
         totalProfit,
         ordersCount: orders.length,
         avgOrderValue: orders.length > 0 ? totalRevenue / orders.length : 0,
         productsCount: products.length,
-        conversionRate: 3.42,
+        conversionRate: orders.length > 0 ? 3.42 : 0,
         orders,
         products,
         adCampaigns,
@@ -186,6 +117,9 @@ export async function GET(req: Request) {
 
     if (type === "shipping") {
       const shipments = await prisma.shipment.findMany({
+        where: {
+          order: { userId },
+        },
         include: {
           order: {
             include: { customer: true, items: true },
@@ -334,21 +268,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    let userId = user?.id;
-
-    if (!userId) {
-      const demoUser = await prisma.user.findFirst({ where: { email: "demo@dropai.io" } }).catch(() => null);
-      userId = demoUser?.id;
-    }
-
-    if (!userId) {
-      const fallbackUser = await prisma.user.findFirst({ where: { role: "MERCHANT" } }).catch(() => null);
-      userId = fallbackUser?.id;
-    }
-
-    if (!userId) {
+    if (!user || !user.id) {
       return NextResponse.json({ error: "User not found or unauthenticated" }, { status: 401 });
     }
+
+    if (user.isSuspended || user.status === "SUSPENDED") {
+      return NextResponse.json({ error: "Account suspended." }, { status: 403 });
+    }
+
+    const userId = user.id;
 
     const body = await req.json();
     const { action } = body;
@@ -521,16 +449,15 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const user = await getCurrentUser();
-    let userId = user?.id;
-
-    if (!userId) {
-      const demoUser = await prisma.user.findFirst({ where: { email: "demo@dropai.io" } });
-      userId = demoUser?.id;
+    if (!user || !user.id) {
+      return NextResponse.json({ error: "Unauthorized: Authentication required." }, { status: 401 });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (user.isSuspended || user.status === "SUSPENDED") {
+      return NextResponse.json({ error: "Account suspended." }, { status: 403 });
     }
+
+    const userId = user.id;
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
@@ -541,11 +468,23 @@ export async function DELETE(req: Request) {
     }
 
     if (type === "product") {
+      const existingProduct = await prisma.product.findFirst({
+        where: { id, userId },
+      });
+      if (!existingProduct) {
+        return NextResponse.json({ error: "Product not found or access denied." }, { status: 404 });
+      }
       await prisma.product.delete({ where: { id } });
       return NextResponse.json({ success: true, id });
     }
 
     if (type === "store") {
+      const existingStore = await prisma.store.findFirst({
+        where: { id, userId },
+      });
+      if (!existingStore) {
+        return NextResponse.json({ error: "Store not found or access denied." }, { status: 404 });
+      }
       await prisma.store.delete({ where: { id } });
       return NextResponse.json({ success: true, id });
     }

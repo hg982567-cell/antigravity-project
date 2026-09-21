@@ -70,18 +70,10 @@ export function Navbar() {
           </button>
 
           <Link
-            href="/owner/login"
-            className="hidden lg:inline-flex items-center gap-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 transition-colors"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Owner Portal
-          </Link>
-
-          <Link
-            href="/app/dashboard"
+            href="/auth/login"
             className="hidden sm:inline-flex text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2"
           >
-            Dashboard
+            Sign In
           </Link>
 
           <Link

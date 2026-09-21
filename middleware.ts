@@ -6,7 +6,12 @@ function decodeJwtPayload(token: string): any {
     if (parts.length < 2) return null;
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const jsonStr = Buffer.from(base64, "base64").toString("utf-8");
-    return JSON.parse(jsonStr);
+    const payload = JSON.parse(jsonStr);
+    // Strict token expiration validation
+    if (payload.exp && typeof payload.exp === "number" && payload.exp * 1000 < Date.now()) {
+      return null;
+    }
+    return payload;
   } catch {
     return null;
   }
@@ -15,16 +20,11 @@ function decodeJwtPayload(token: string): any {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 0. Path Normalization & Canonical Route Redirection (Resolves all 404s for un-prefixed SaaS routes)
+  // 0. Path Normalization & Canonical Route Redirection
   const canonicalRedirects: Record<string, string> = {
-    "/billing": "/app/billing",
-    "/subscription": "/app/billing",
-    "/subscriptions": "/app/billing",
-    "/dashboard/billing": "/app/billing",
-    "/dashboard/subscription": "/app/billing",
-    "/app/subscription": "/app/billing",
-    "/app/subscriptions": "/app/billing",
     "/dashboard": "/app/dashboard",
+    "/product-research": "/app/product-research",
+    "/product-research-radar": "/app/product-research",
     "/products": "/app/products",
     "/orders": "/app/orders",
     "/stores": "/app/stores",
@@ -32,16 +32,49 @@ export function middleware(request: NextRequest) {
     "/customers": "/app/customers",
     "/settings": "/app/settings",
     "/analytics": "/app/analytics",
+    "/shipping": "/app/shipping",
+    "/creative-studio": "/app/creative-studio",
+    "/ads": "/app/ads",
+    "/automations": "/app/automations",
+    "/integrations": "/app/integrations",
+    "/notifications": "/app/notifications",
+    "/ai-assistant": "/app/ai-assistant",
+    "/billing": "/app/billing",
+    "/subscription": "/app/billing",
+    "/subscriptions": "/app/billing",
+    "/dashboard/billing": "/app/billing",
+    "/dashboard/subscription": "/app/billing",
+    "/app/subscription": "/app/billing",
+    "/app/subscriptions": "/app/billing",
+    "/login": "/auth/login",
+    "/signup": "/auth/signup",
     "/admin": "/owner/dashboard",
+    "/admin/dashboard": "/owner/dashboard",
+    "/admin/users": "/owner/users",
     "/admin/billing": "/owner/subscriptions",
     "/admin/subscription": "/owner/subscriptions",
     "/admin/subscriptions": "/owner/subscriptions",
+    "/admin/ai": "/owner/ai",
+    "/admin/shipping": "/owner/shipping",
+    "/admin/profit": "/owner/profit",
+    "/admin/security": "/owner/security",
+    "/admin/system": "/owner/system",
     "/owner/billing": "/owner/subscriptions",
     "/owner/subscription": "/owner/subscriptions",
   };
 
   if (canonicalRedirects[pathname]) {
     const targetUrl = new URL(canonicalRedirects[pathname], request.url);
+    if (request.nextUrl.search) {
+      targetUrl.search = request.nextUrl.search;
+    }
+    return NextResponse.redirect(targetUrl, 308);
+  }
+
+  // Catch-all for any unmapped /admin/:path* routes -> redirect to /owner/:path*
+  if (pathname.startsWith("/admin/")) {
+    const subPath = pathname.slice("/admin".length);
+    const targetUrl = new URL(`/owner${subPath}`, request.url);
     if (request.nextUrl.search) {
       targetUrl.search = request.nextUrl.search;
     }
@@ -56,60 +89,58 @@ export function middleware(request: NextRequest) {
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
+  // Read cookies & decode payloads
+  const sessionToken = request.cookies.get("dropai_session_token")?.value;
+  const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
+
+  const sessionPayload = sessionToken ? decodeJwtPayload(sessionToken) : null;
+  const ownerPayload = ownerToken ? decodeJwtPayload(ownerToken) : null;
+
+  // Authoritative owner check: purely role-based
+  const hasOwnerRole = Boolean(
+    (ownerPayload && ownerPayload.role === "OWNER") ||
+    (sessionPayload && sessionPayload.role === "OWNER")
+  );
+
   // 1. Protect Merchant App routes (/app/*)
   if (pathname.startsWith("/app")) {
-    const sessionToken = request.cookies.get("dropai_session_token")?.value;
-    const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
-
-    if (!sessionToken && !ownerToken) {
+    if (!sessionPayload && !ownerPayload) {
       const loginUrl = new URL("/auth/login", request.url);
       const redirectTarget = pathname + (request.nextUrl.search || "");
       loginUrl.searchParams.set("redirect", redirectTarget);
-      return NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      if (sessionToken && !sessionPayload) {
+        redirectResponse.cookies.delete("dropai_session_token");
+      }
+      if (ownerToken && !ownerPayload) {
+        redirectResponse.cookies.delete("dropai_owner_session_token");
+      }
+      return redirectResponse;
     }
 
-    // Enforce email verification on /app/*
-    if (sessionToken && !ownerToken) {
-      const payload = decodeJwtPayload(sessionToken);
-      if (payload && payload.isEmailVerified === false && payload.role !== "OWNER") {
-        const verifyUrl = new URL("/auth/verify-email", request.url);
-        if (payload.email) {
-          verifyUrl.searchParams.set("email", payload.email);
-        }
-        return NextResponse.redirect(verifyUrl);
+    // Enforce email verification on /app/* if unverified
+    if (sessionPayload && !hasOwnerRole && sessionPayload.isEmailVerified === false) {
+      const verifyUrl = new URL("/auth/verify-email", request.url);
+      if (sessionPayload.email) {
+        verifyUrl.searchParams.set("email", sessionPayload.email);
       }
+      return NextResponse.redirect(verifyUrl);
     }
   }
 
   // 2. Protect Owner Control Center routes (/owner/*)
   if (pathname.startsWith("/owner")) {
-    // Permit access to /owner/login
     if (pathname === "/owner/login") {
       return response;
     }
 
-    const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
-    const sessionToken = request.cookies.get("dropai_session_token")?.value;
-
-    const ownerPayload = ownerToken ? decodeJwtPayload(ownerToken) : null;
-    const sessionPayload = sessionToken ? decodeJwtPayload(sessionToken) : null;
-
     // Strict Isolation: Users authenticated as normal MERCHANTS are strictly blocked from /owner/*
-    if (sessionPayload && sessionPayload.role === "MERCHANT") {
+    if (sessionPayload && sessionPayload.role === "MERCHANT" && !hasOwnerRole) {
       const loginUrl = new URL("/owner/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
 
-    const hasOwnerAccess =
-      (ownerPayload && ownerPayload.role === "OWNER") ||
-      (sessionPayload &&
-        (sessionPayload.role === "OWNER" ||
-          sessionPayload.email === "admin@123456" ||
-          sessionPayload.email === "admin@123456.com" ||
-          sessionPayload.email === "owner@dropai.io"));
-
-    if (!hasOwnerAccess) {
-      // Redirect unauthenticated visitors directly to /owner/login
+    if (!hasOwnerRole) {
       const loginUrl = new URL("/owner/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -117,25 +148,18 @@ export function middleware(request: NextRequest) {
 
   // 3. Protect Merchant App API routes (/api/app/*)
   if (pathname.startsWith("/api/app") && pathname !== "/api/app/seed") {
-    const sessionToken = request.cookies.get("dropai_session_token")?.value;
-    const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
-
-    if (!sessionToken && !ownerToken) {
+    if (!sessionPayload && !ownerPayload) {
       return NextResponse.json(
         { error: "Access Denied: Authentication Required" },
         { status: 401 }
       );
     }
 
-    // Block unverified accounts from mutating store data
-    if (sessionToken && !ownerToken) {
-      const payload = decodeJwtPayload(sessionToken);
-      if (payload && payload.isEmailVerified === false && payload.role !== "OWNER") {
-        return NextResponse.json(
-          { error: "Email verification required before accessing store APIs." },
-          { status: 403 }
-        );
-      }
+    if (sessionPayload && !hasOwnerRole && sessionPayload.isEmailVerified === false) {
+      return NextResponse.json(
+        { error: "Email verification required before accessing store APIs." },
+        { status: 403 }
+      );
     }
   }
 
@@ -146,29 +170,15 @@ export function middleware(request: NextRequest) {
       pathname === "/api/owner/auth/login";
 
     if (!isPublicAuthRoute) {
-      const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
-      const sessionToken = request.cookies.get("dropai_session_token")?.value;
-
-      const ownerPayload = ownerToken ? decodeJwtPayload(ownerToken) : null;
-      const sessionPayload = sessionToken ? decodeJwtPayload(sessionToken) : null;
-
       // Strict Isolation: Merchant accounts cannot access owner APIs
-      if (sessionPayload && sessionPayload.role === "MERCHANT") {
+      if (sessionPayload && sessionPayload.role === "MERCHANT" && !hasOwnerRole) {
         return NextResponse.json(
           { error: "Access Denied: Merchant accounts cannot access Owner APIs." },
           { status: 403 }
         );
       }
 
-      const hasOwnerAccess =
-        (ownerPayload && ownerPayload.role === "OWNER") ||
-        (sessionPayload &&
-          (sessionPayload.role === "OWNER" ||
-            sessionPayload.email === "admin@123456" ||
-            sessionPayload.email === "admin@123456.com" ||
-            sessionPayload.email === "owner@dropai.io"));
-
-      if (!hasOwnerAccess) {
+      if (!hasOwnerRole) {
         return NextResponse.json(
           { error: "Access Denied: Owner Authorization Required" },
           { status: 403 }

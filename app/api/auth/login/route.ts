@@ -40,186 +40,37 @@ export async function POST(req: Request) {
       );
     }
 
-    const rawEmail = String(email).trim().toLowerCase();
+    const cleanEmail = String(email).trim().toLowerCase();
     const cleanPassword = String(password);
 
-    const isAdminAlias =
-      rawEmail === "admin" ||
-      rawEmail === "owner" ||
-      rawEmail === "admin@dropai.io" ||
-      rawEmail === "admin@123456" ||
-      rawEmail === "admin@123456.com" ||
-      rawEmail === "admin123456";
-
-    const isDemoAlias =
-      rawEmail === "demo" ||
-      rawEmail === "demo@dropai.io" ||
-      rawEmail === "demo@example.com" ||
-      rawEmail === "merchant" ||
-      rawEmail === "merchant@store.com";
-
-    const isMasterAdminPassword =
-      cleanPassword === "admin123456" ||
-      cleanPassword === "DropAIOwner2026!Secure" ||
-      cleanPassword === "admin123" ||
-      cleanPassword === "admin";
-
-    const isDemoPassword =
-      cleanPassword === "password123" ||
-      cleanPassword === "demo123" ||
-      cleanPassword === "password";
-
+    // 1. Authoritative Database User Lookup
     let user: any = null;
     try {
-      if (isAdminAlias) {
-        user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: "admin@123456" },
-              { email: "admin@123456.com" },
-              { email: "owner@dropai.io" },
-              { email: rawEmail },
-            ],
-          },
-        });
-      } else if (isDemoAlias) {
-        user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: "demo@dropai.io" },
-              { email: "demo@example.com" },
-              { email: rawEmail },
-            ],
-          },
-        });
-      } else {
-        user = await prisma.user.findFirst({
-          where: { email: rawEmail },
-        });
-      }
+      user = await prisma.user.findFirst({
+        where: { email: cleanEmail },
+      });
     } catch (dbErr) {
       console.warn("DB lookup in /api/auth/login:", dbErr);
-    }
-
-    // Auto-provision admin user if missing
-    if (!user && (isAdminAlias || (isMasterAdminPassword && rawEmail.includes("admin")))) {
-      try {
-        const hash = await bcrypt.hash(cleanPassword, 10);
-        user = await prisma.user.create({
-          data: {
-            email: rawEmail.includes("@") ? rawEmail : "admin@123456",
-            name: "Platform Super Admin",
-            passwordHash: hash,
-            role: "OWNER",
-            status: "ACTIVE",
-            isEmailVerified: true,
-            twoFactorEnabled: false,
-            recoveryCodes: JSON.stringify(["DROPAI-ADMIN-123456", "DROPAI-BACKUP-998822"]),
-            subscription: {
-              create: {
-                plan: "ENTERPRISE",
-                status: "ACTIVE",
-                aiCreditsRemaining: 50000,
-                aiCreditsTotal: 50000,
-                storesLimit: 100,
-                currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-              },
-            },
-          },
-        });
-      } catch (createErr) {
-        console.warn("Admin auto-provision in /api/auth/login:", createErr);
-        user = {
-          id: "owner_system_admin",
-          email: rawEmail || "admin@123456",
-          name: "Platform Super Admin",
-          role: "OWNER",
-          status: "ACTIVE",
-          isEmailVerified: true,
-        };
-      }
-    }
-
-    // Auto-provision demo merchant user if missing
-    if (!user && (isDemoAlias || isDemoPassword)) {
-      try {
-        const hash = await bcrypt.hash(cleanPassword, 10);
-        user = await prisma.user.create({
-          data: {
-            email: rawEmail.includes("@") ? rawEmail : "demo@example.com",
-            name: "Alex Rivera",
-            passwordHash: hash,
-            role: "MERCHANT",
-            status: "ACTIVE",
-            isEmailVerified: true,
-            twoFactorEnabled: false,
-            subscription: {
-              create: {
-                plan: "PRO",
-                status: "ACTIVE",
-                aiCreditsRemaining: 5000,
-                aiCreditsTotal: 5000,
-                storesLimit: 5,
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              },
-            },
-          },
-        });
-      } catch (createErr) {
-        console.warn("Demo merchant auto-provision in /api/auth/login:", createErr);
-        user = {
-          id: "demo_merchant_user",
-          email: rawEmail || "demo@example.com",
-          name: "Alex Rivera",
-          role: "MERCHANT",
-          status: "ACTIVE",
-          isEmailVerified: true,
-        };
-      }
-    }
-
-    if (!user && rawEmail.includes("@") && rawEmail.includes(".") && cleanPassword.length >= 6) {
-      try {
-        const hash = await bcrypt.hash(cleanPassword, 10);
-        user = await prisma.user.create({
-          data: {
-            email: rawEmail,
-            name: rawEmail.split("@")[0],
-            passwordHash: hash,
-            role: "MERCHANT",
-            status: "ACTIVE",
-            isEmailVerified: true,
-            twoFactorEnabled: false,
-            subscription: {
-              create: {
-                plan: "PRO",
-                status: "ACTIVE",
-                aiCreditsRemaining: 5000,
-                aiCreditsTotal: 5000,
-                storesLimit: 5,
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              },
-            },
-          },
-        });
-      } catch (autoErr) {
-        console.warn("Auto-create merchant user in /api/auth/login:", autoErr);
-      }
     }
 
     if (!user) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
+    // 2. Account Suspension Guard
+    if (user.isSuspended || user.status === "SUSPENDED" || user.status === "DISABLED") {
+      return NextResponse.json(
+        { error: `Account suspended: ${user.suspendedReason || "Access restricted by Platform Administrator."}` },
+        { status: 403 }
+      );
+    }
+
+    // 3. Secure Cryptographic Password Verification
     let passwordMatches = false;
-    if (isAdminAlias && isMasterAdminPassword) {
-      passwordMatches = true;
-    } else if (isDemoAlias && (isDemoPassword || isMasterAdminPassword)) {
-      passwordMatches = true;
-    } else if (user.passwordHash) {
+    if (user.passwordHash) {
       passwordMatches = await bcrypt.compare(cleanPassword, user.passwordHash).catch(() => false);
-    } else if (!user.passwordHash && cleanPassword.length >= 6) {
-      // If user exists without password hash (e.g. registered via OAuth or external), link this password
+    } else if (cleanPassword.length >= 6) {
+      // If account was created via external OAuth without password hash, link this password
       try {
         const newHash = await bcrypt.hash(cleanPassword, 10);
         await prisma.user.update({
@@ -236,23 +87,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
-    // Ensure user status is ACTIVE and email verified in DB
-    if (!user.isEmailVerified || user.status !== "ACTIVE") {
-      prisma.user.update({
-        where: { id: user.id },
-        data: { isEmailVerified: true, status: "ACTIVE" },
-      }).catch(() => null);
-    }
+    // 4. Authoritative Role Verification
+    const isOwner = user.role === "OWNER";
 
-    const isOwner = user.role === "OWNER" || isAdminAlias;
-
-    // Create session
+    // 5. Create Secure Database Session
     const { token: sessionToken } = await createDatabaseSession({
       userId: user.id,
       email: user.email,
       role: user.role,
-      status: "ACTIVE",
-      isEmailVerified: true,
+      status: user.status || "ACTIVE",
+      isEmailVerified: user.isEmailVerified ?? true,
       ipAddress: ip,
       userAgent,
     });

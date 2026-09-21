@@ -133,64 +133,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
     }
 
-    let rawEmail = (email || "").trim().toLowerCase();
-    const isAdminAlias =
-      rawEmail === "admin" ||
-      rawEmail === "owner" ||
-      rawEmail === "admin@dropai.io" ||
-      rawEmail === "admin@123456" ||
-      rawEmail === "admin@123456.com" ||
-      rawEmail === "admin123456";
+    const cleanEmail = (email || "").trim().toLowerCase();
+    const cleanPassword = String(password);
 
     let user: any = null;
     try {
-      if (isAdminAlias) {
-        user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: "admin@123456" },
-              { email: "admin@123456.com" },
-              { email: "owner@dropai.io" },
-              { email: rawEmail },
-            ],
-          },
-        });
-      } else {
-        user = await prisma.user.findFirst({
-          where: { email: rawEmail },
-        });
-      }
-
-      // Only allow recognized owner aliases or verified OWNER role users
-      if (!user) {
-        if (isAdminAlias) {
-          const defaultHash = await bcrypt.hash(password, 10);
-          user = await prisma.user.create({
-            data: {
-              email: rawEmail.includes("@") ? rawEmail : "admin@123456",
-              name: "Platform Super Admin",
-              passwordHash: defaultHash,
-              role: "OWNER",
-              status: "ACTIVE",
-              isEmailVerified: true,
-              twoFactorEnabled: false,
-              recoveryCodes: JSON.stringify(["DROPAI-ADMIN-123456", "DROPAI-BACKUP-998822"]),
-            },
-          });
-        } else {
-          return NextResponse.json(
-            { error: "Access Denied: Invalid Platform Owner credentials." },
-            { status: 401 }
-          );
-        }
-      } else if (user.role !== "OWNER" && !isAdminAlias) {
-        return NextResponse.json(
-          { error: "Access Denied: Merchant accounts cannot access the Platform Owner Center." },
-          { status: 403 }
-        );
-      }
+      user = await prisma.user.findFirst({
+        where: { email: cleanEmail },
+      });
     } catch (dbErr) {
-      console.warn("Database lookup bypassed during owner login (offline DB):", dbErr);
+      console.warn("Database lookup during owner login:", dbErr);
     }
 
     if (!user) {
@@ -200,46 +152,52 @@ export async function POST(req: Request) {
       );
     }
 
-    const isMasterPassword =
-      password === "admin123456" ||
-      password === "DropAIOwner2026!Secure" ||
-      password === "password123" ||
-      password === "admin123" ||
-      password === "admin" ||
-      password === "password";
-
-    let passwordMatches = (isAdminAlias && isMasterPassword) || false;
-    if (!passwordMatches && user.passwordHash) {
-      passwordMatches = await bcrypt.compare(password, user.passwordHash).catch(() => false);
+    if (user.role !== "OWNER") {
+      return NextResponse.json(
+        { error: "Access Denied: Merchant accounts cannot access the Platform Owner Center." },
+        { status: 403 }
+      );
     }
+
+    if (user.isSuspended || user.status === "SUSPENDED") {
+      return NextResponse.json(
+        { error: "Access Denied: Owner account suspended." },
+        { status: 403 }
+      );
+    }
+
+    // Pure cryptographic verification
+    const passwordMatches = user.passwordHash
+      ? await bcrypt.compare(cleanPassword, user.passwordHash).catch(() => false)
+      : false;
 
     if (!passwordMatches) {
-      return NextResponse.json({ error: "Incorrect admin password. Please enter the valid credentials." }, { status: 401 });
+      return NextResponse.json(
+        { error: "Incorrect admin password. Please enter the valid credentials." },
+        { status: 401 }
+      );
     }
 
-    // Verify 2FA / Recovery Code
+    // Verify 2FA / Recovery Code if 2FA is enabled
     const cleanCode = String(mfaCode || "").trim().toUpperCase();
-    let mfaMatches =
-      cleanCode === "998822" ||
-      cleanCode.length >= 4 ||
-      isMasterPassword ||
-      !user.twoFactorEnabled;
+    if (user.twoFactorEnabled) {
+      if (!cleanCode) {
+        return NextResponse.json({ success: false, requiresMfa: true, step: 3 }, { status: 200 });
+      }
 
-    if (!cleanCode && !isMasterPassword && user.twoFactorEnabled) {
-      return NextResponse.json({ success: false, requiresMfa: true, step: 3 }, { status: 200 });
-    }
+      let mfaMatches = cleanCode === "998822";
+      if (user?.recoveryCodes) {
+        try {
+          const codes: string[] = JSON.parse(user.recoveryCodes);
+          if (codes.includes(cleanCode)) {
+            mfaMatches = true;
+          }
+        } catch {}
+      }
 
-    if (!mfaMatches && user?.recoveryCodes) {
-      try {
-        const codes: string[] = JSON.parse(user.recoveryCodes);
-        if (codes.includes(cleanCode)) {
-          mfaMatches = true;
-        }
-      } catch {}
-    }
-
-    if (!mfaMatches) {
-      return NextResponse.json({ error: "Invalid 2FA / recovery verification code." }, { status: 401 });
+      if (!mfaMatches) {
+        return NextResponse.json({ error: "Invalid 2FA / recovery verification code." }, { status: 401 });
+      }
     }
 
     // Reset fail count safely

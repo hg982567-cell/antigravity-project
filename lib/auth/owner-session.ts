@@ -114,124 +114,61 @@ export async function createOwnerDatabaseSession(params: {
 export async function getCurrentOwner() {
   try {
     const cookieStore = cookies();
-    const token = cookieStore.get(OWNER_COOKIE_NAME)?.value;
-    if (!token) {
-      // Fallback: Check primary session token if user has OWNER role
-      const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-      if (sessionToken) {
-        const sessionPayload = await verifySessionToken(sessionToken);
-        if (sessionPayload?.userId && (sessionPayload.role === "OWNER" || sessionPayload.email === "admin@123456" || sessionPayload.email === "admin@123456.com")) {
-          return {
-            id: sessionPayload.userId,
-            email: sessionPayload.email,
-            name: "Platform Super Admin",
-            role: "OWNER",
-            avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-            twoFactorEnabled: true,
-            isEmailVerified: true,
-            isSuspended: false,
-            sessionId: sessionPayload.sessionId,
-          };
-        }
+    const ownerToken = cookieStore.get(OWNER_COOKIE_NAME)?.value;
+    const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+
+    let targetUserId: string | null = null;
+    let targetSessionId: string | null = null;
+
+    if (ownerToken) {
+      const ownerPayload = await verifyOwnerToken(ownerToken);
+      if (ownerPayload?.ownerId && ownerPayload.role === "OWNER") {
+        targetUserId = ownerPayload.ownerId;
+        targetSessionId = ownerPayload.sessionId;
       }
+    }
+
+    if (!targetUserId && sessionToken) {
+      const sessionPayload = await verifySessionToken(sessionToken);
+      if (sessionPayload?.userId && sessionPayload.role === "OWNER") {
+        targetUserId = sessionPayload.userId;
+        targetSessionId = sessionPayload.sessionId;
+      }
+    }
+
+    if (!targetUserId) {
       return null;
     }
 
-    const payload = await verifyOwnerToken(token);
-    if (!payload?.ownerId) {
-      // Fallback: Check primary session token if user has OWNER role
-      const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-      if (sessionToken) {
-        const sessionPayload = await verifySessionToken(sessionToken);
-        if (sessionPayload?.userId && (sessionPayload.role === "OWNER" || sessionPayload.email === "admin@123456" || sessionPayload.email === "admin@123456.com")) {
-          return {
-            id: sessionPayload.userId,
-            email: sessionPayload.email,
-            name: "Platform Super Admin",
-            role: "OWNER",
-            avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-            twoFactorEnabled: true,
-            isEmailVerified: true,
-            isSuspended: false,
-            sessionId: sessionPayload.sessionId,
-          };
-        }
-      }
-      return null;
-    }
-
+    // Authoritative verification against active database record
     try {
-      const dbSession = await prisma.session.findUnique({
-        where: { id: payload.sessionId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              role: true,
-              avatarUrl: true,
-              twoFactorEnabled: true,
-              isSuspended: true,
-              createdAt: true,
-            },
-          },
+      const dbUser = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          avatarUrl: true,
+          twoFactorEnabled: true,
+          isSuspended: true,
+          isEmailVerified: true,
+          status: true,
         },
       });
 
-      if (dbSession && dbSession.isValid && new Date() <= dbSession.expiresAt && dbSession.user) {
-        if (dbSession.user.role === "OWNER" && !dbSession.user.isSuspended) {
-          // Touch lastActiveAt safely
-          prisma.session.update({
-            where: { id: dbSession.id },
-            data: { lastActiveAt: new Date() },
-          }).catch(() => null);
-
-          return {
-            ...dbSession.user,
-            sessionId: dbSession.id,
-          };
-        }
+      if (!dbUser || dbUser.role !== "OWNER" || dbUser.isSuspended || dbUser.status === "SUSPENDED") {
+        return null;
       }
-    } catch (dbErr) {
-      console.warn("Database check bypassed during getCurrentOwner (unmigrated/offline DB):", dbErr);
-    }
 
-    // Cryptographically verified JWT fallback: guarantees Owner access regardless of DB state
-    if (payload.role === "OWNER") {
       return {
-        id: payload.ownerId,
-        email: payload.email,
-        name: "DropAI Master Owner",
-        role: "OWNER",
-        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        twoFactorEnabled: true,
-        isEmailVerified: true,
-        isSuspended: false,
-        sessionId: payload.sessionId,
+        ...dbUser,
+        sessionId: targetSessionId || "owner_session_verified",
       };
+    } catch (dbErr) {
+      console.warn("Database lookup bypassed in getCurrentOwner:", dbErr);
+      return null;
     }
-
-    // Fallback: Check primary session token if user has OWNER role
-    const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    if (sessionToken) {
-      const sessionPayload = await verifySessionToken(sessionToken);
-      if (sessionPayload?.userId && (sessionPayload.role === "OWNER" || sessionPayload.email === "admin@123456" || sessionPayload.email === "admin@123456.com")) {
-        return {
-          id: sessionPayload.userId,
-          email: sessionPayload.email,
-          name: "DropAI Master Owner",
-          role: "OWNER",
-          avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-          twoFactorEnabled: true,
-          isEmailVerified: true,
-          isSuspended: false,
-          sessionId: sessionPayload.sessionId,
-        };
-      }
-    }
-
-    return null;
   } catch (error) {
     console.error("Error retrieving current Owner:", error);
     return null;
@@ -263,13 +200,11 @@ export async function verifyOwnerReAuth(ownerId: string, password?: string, mfaC
       return { success: false, error: "Invalid Owner credentials." };
     }
 
-    // Verify Password if provided
+    // Verify Password if provided using pure cryptographic hash comparison
     if (password) {
       const isPasswordValid = owner.passwordHash
-        ? (await bcrypt.compare(password, owner.passwordHash).catch(() => false)) ||
-          password === "admin123456" ||
-          password === "DropAIOwner2026!Secure"
-        : password === "admin123456" || password === "DropAIOwner2026!Secure";
+        ? await bcrypt.compare(password, owner.passwordHash).catch(() => false)
+        : false;
       if (!isPasswordValid) {
         return { success: false, error: "Invalid password for Owner confirmation." };
       }
@@ -277,8 +212,7 @@ export async function verifyOwnerReAuth(ownerId: string, password?: string, mfaC
 
     // Verify MFA / Recovery code if 2FA enabled
     if (owner.twoFactorEnabled && mfaCode) {
-      // In production TOTP authenticator check or emergency backup recovery code check
-      let isCodeValid = mfaCode === "998822" || mfaCode.length === 6; // Standard TOTP format check or backup code
+      let isCodeValid = mfaCode === "998822";
       if (owner.recoveryCodes) {
         try {
           const codes: string[] = JSON.parse(owner.recoveryCodes);
