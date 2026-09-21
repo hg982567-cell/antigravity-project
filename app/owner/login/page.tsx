@@ -23,25 +23,11 @@ export default function OwnerLoginPage() {
     setLoading(true);
 
     try {
-      let idToken: string | null = null;
-
-      // 1. Attempt authentication via Firebase only if valid domain format
-      if (email.includes("@") && email.includes(".")) {
-        try {
-          const user = await signInWithFirebase(email.trim(), password);
-          idToken = await user.getIdToken();
-        } catch (fbErr: any) {
-          // If Firebase is not configured or in dev mode, allow backend fallback
-          console.warn("Firebase sign-in note:", fbErr.message);
-        }
-      }
-
-      // 2. Transmit to Owner authentication endpoint
+      // Transmit directly to authoritative Owner authentication endpoint
       const res = await fetch("/api/owner/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idToken: idToken || undefined,
           email: email.trim(),
           password,
           mfaCode: mfaCode.trim() || undefined,
