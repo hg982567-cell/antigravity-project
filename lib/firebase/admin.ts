@@ -1,4 +1,3 @@
-import "server-only";
 
 interface FirebaseAdminConfig {
   projectId?: string;

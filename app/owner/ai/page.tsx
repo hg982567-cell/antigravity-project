@@ -112,7 +112,12 @@ export default function OwnerAiPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(data?.providers || []).map((prov: any) => {
-            const models = JSON.parse(prov.modelsJson || "[]");
+            let models: string[] = [];
+            try {
+              models = typeof prov.modelsJson === "string" ? JSON.parse(prov.modelsJson || "[]") : (prov.modelsJson || []);
+            } catch {
+              models = [];
+            }
             const isActive = prov.status === "ACTIVE";
             return (
               <div key={prov.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">

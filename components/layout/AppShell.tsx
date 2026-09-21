@@ -174,12 +174,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 PLATFORM EMERGENCY NOTICE: DropAI is in read-only administrative lockdown ({lockdownReason || "Security Review"}).
               </span>
             </div>
-            <Link
-              href="/owner/system"
-              className="text-[11px] font-mono underline hover:text-amber-200 shrink-0 ml-3"
-            >
-              Owner Console →
-            </Link>
+            {isOwner && (
+              <Link
+                href="/owner/system"
+                className="text-[11px] font-mono underline hover:text-amber-200 shrink-0 ml-3"
+              >
+                Owner Console →
+              </Link>
+            )}
           </div>
         )}
 
