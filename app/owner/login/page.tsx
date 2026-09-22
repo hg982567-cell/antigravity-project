@@ -49,8 +49,7 @@ export default function OwnerLoginPage() {
       }
 
       // Success: redirect to Owner Command Center
-      router.push("/owner/dashboard");
-      router.refresh();
+      window.location.href = "/owner/dashboard";
     } catch (err: any) {
       setError(err.message || "Authentication rejected.");
       setLoading(false);
@@ -85,8 +84,7 @@ export default function OwnerLoginPage() {
         throw new Error(data.error || "Google account does not possess Platform Owner privileges.");
       }
 
-      router.push("/owner/dashboard");
-      router.refresh();
+      window.location.href = "/owner/dashboard";
     } catch (err: any) {
       console.error("Owner Google login error:", err);
       const friendlyError = formatFirebaseAuthError(err);

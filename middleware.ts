@@ -85,16 +85,24 @@ export async function middleware(request: NextRequest) {
     "/admin/profit": "/owner/profit",
     "/admin/security": "/owner/security",
     "/admin/system": "/owner/system",
+    "/admin/docs": "/owner/docs",
     "/owner/billing": "/owner/subscriptions",
     "/owner/subscription": "/owner/subscriptions",
   };
 
-  // Auth shortcut aliases
+  // Auth & Docs shortcut aliases
   if (pathname === "/login") {
     return NextResponse.redirect(new URL("/auth/login", request.url), 307);
   }
   if (pathname === "/signup") {
     return NextResponse.redirect(new URL("/auth/signup", request.url), 307);
+  }
+  if (pathname === "/docs") {
+    return NextResponse.redirect(new URL("/help", request.url), 308);
+  }
+  if (pathname.startsWith("/docs/")) {
+    const sub = pathname.slice("/docs".length);
+    return NextResponse.redirect(new URL(`/help${sub}`, request.url), 308);
   }
 
   // Handle Merchant Protected Aliases (e.g. /dashboard, /product-research, etc.)

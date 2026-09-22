@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Sparkles,
   Share2,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +80,7 @@ export function Sidebar({
         { name: "Integrations", href: "/app/integrations", icon: Layers },
         { name: "Security Center", href: "/app/security", icon: ShieldAlert },
         { name: "Billing", href: "/app/billing", icon: CreditCard },
+        { name: "Documentation", href: "/help", icon: BookOpen },
         { name: "Settings", href: "/app/settings", icon: Settings },
       ],
     },

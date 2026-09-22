@@ -80,13 +80,12 @@ export default function LoginPage() {
           : null;
 
       if (safeRedirect && (!safeRedirect.startsWith("/owner") || isOwner)) {
-        router.push(safeRedirect);
+        window.location.href = safeRedirect;
       } else if (isOwner) {
-        router.push("/owner/dashboard");
+        window.location.href = "/owner/dashboard";
       } else {
-        router.push("/app/dashboard");
+        window.location.href = "/app/dashboard";
       }
-      router.refresh();
     } catch (err: any) {
       console.error("Login attempt failed:", err);
       if (err.code === "auth/too-many-requests") {
@@ -138,9 +137,9 @@ export default function LoginPage() {
           : null;
 
       if (data.isOwner || data.user?.role === "OWNER") {
-        router.push(safeRedirect || "/owner/dashboard");
+        window.location.href = safeRedirect || "/owner/dashboard";
       } else {
-        router.push(safeRedirect || "/app/dashboard");
+        window.location.href = safeRedirect || "/app/dashboard";
       }
     } catch (err: any) {
       console.error("Google sign in error:", err);

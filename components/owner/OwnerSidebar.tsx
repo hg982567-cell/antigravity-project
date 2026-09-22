@@ -23,6 +23,7 @@ import {
   ChevronRight,
   ExternalLink,
   Store,
+  BookOpen,
 } from "lucide-react";
 
 interface OwnerSidebarProps {
@@ -86,6 +87,12 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
       title: "DISASTER RECOVERY",
       items: [
         { label: "Backups & Recovery", href: "/owner/recovery", icon: Database },
+      ],
+    },
+    {
+      title: "KNOWLEDGE & DOCS",
+      items: [
+        { label: "Documentation CMS", href: "/owner/docs", icon: BookOpen },
       ],
     },
   ];

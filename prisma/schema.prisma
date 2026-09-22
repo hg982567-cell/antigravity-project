@@ -567,3 +567,41 @@ model SocialAdPost {
   createdAt       DateTime      @default(now())
 }
 
+model DocumentationArticle {
+  id               String            @id @default(cuid())
+  slug             String            @unique
+  title            String
+  description      String
+  content          String            @db.Text
+  category         String            // getting-started, product-research-ai, shopify-integrations, automations-fulfillment, orders, payments-currency, security-account, troubleshooting, developer-api, admin-system
+  subcategory      String?
+  tags             String            // Comma-separated or JSON string
+  status           String            @default("PUBLISHED") // PUBLISHED, DRAFT, ARCHIVED
+  author           String            @default("DropAI Engineering")
+  readingTime      String            @default("5 min read")
+  featured         Boolean           @default(false)
+  visibility       String            @default("PUBLIC") // PUBLIC, AUTHENTICATED, ADMIN_ONLY
+  sortOrder        Int               @default(0)
+  helpfulYes       Int               @default(0)
+  helpfulNo        Int               @default(0)
+  version          String            @default("1.0.0")
+  relatedSlugs     String?           // Comma-separated slugs
+  deprecated       Boolean           @default(false)
+  deprecatedReason String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  feedbacks        ArticleFeedback[]
+}
+
+model ArticleFeedback {
+  id         String               @id @default(cuid())
+  articleId  String
+  article    DocumentationArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId     String?
+  isHelpful  Boolean
+  comment    String?
+  ipAddress  String?
+  createdAt  DateTime             @default(now())
+}
+
