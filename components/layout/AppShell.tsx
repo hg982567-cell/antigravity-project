@@ -4,21 +4,26 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
-import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
 import { AlertOctagon, Wrench, ShieldAlert, Shield, ArrowRight, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useSystem } from "@/components/providers/SystemContext";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser?: any;
+}) {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { lockdownActive, lockdownReason, maintenanceMode, platformName, refreshSystem } = useSystem();
   
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isOwner, setIsOwner] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(initialUser || null);
+  const [isOwner, setIsOwner] = useState(Boolean(initialUser && (initialUser.role === "OWNER" || initialUser.role === "ADMIN")));
+  const [checkingAuth, setCheckingAuth] = useState(!initialUser);
 
   useEffect(() => {
     fetch("/api/auth/session")
@@ -184,9 +189,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
         )}
-
-        {/* Demo Mode Notice Banner */}
-        <DemoModeBanner />
 
         {/* Global Application TopBar */}
         <TopBar setMobileOpen={setMobileOpen} />

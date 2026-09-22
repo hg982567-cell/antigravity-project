@@ -69,26 +69,6 @@ export async function POST(req: Request) {
     let passwordMatches = false;
     if (user.passwordHash) {
       passwordMatches = await bcrypt.compare(cleanPassword, user.passwordHash).catch(() => false);
-      if (!passwordMatches && (cleanPassword === "admin123456" || cleanPassword === "admin123") && user.role === "OWNER") {
-        passwordMatches = true;
-        const newHash = await bcrypt.hash(cleanPassword, 10);
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { passwordHash: newHash },
-        }).catch(() => null);
-      }
-    } else if (cleanPassword.length >= 6) {
-      // If account was created via external OAuth without password hash, link this password
-      try {
-        const newHash = await bcrypt.hash(cleanPassword, 10);
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { passwordHash: newHash, isEmailVerified: true, status: "ACTIVE" },
-        });
-        passwordMatches = true;
-      } catch (hashErr) {
-        console.warn("Failed to set password hash on user:", hashErr);
-      }
     }
 
     if (!passwordMatches) {

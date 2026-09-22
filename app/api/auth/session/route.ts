@@ -145,7 +145,7 @@ export async function POST(req: Request) {
       const maintenanceSetting = await prisma.systemSetting.findUnique({
         where: { key: "maintenance_mode" },
       });
-      if (maintenanceSetting?.value === "true" && !hasAdminClaim && email !== "owner@dropai.io") {
+      if (maintenanceSetting?.value === "true" && !hasAdminClaim) {
         return NextResponse.json(
           { error: "DropAI is currently in Maintenance Mode for scheduled infrastructure optimization." },
           { status: 503 }
@@ -180,9 +180,11 @@ export async function POST(req: Request) {
             { status: 403 }
           );
         }
-      } catch {}
+      } catch (regErr) {
+        console.warn("Registration setting check skipped:", regErr);
+      }
 
-      const userRole = hasAdminClaim || email === "owner@dropai.io" ? "OWNER" : "MERCHANT";
+      const userRole = hasAdminClaim ? "OWNER" : "MERCHANT";
       const initialStatus = isEmailVerified ? "ACTIVE" : "EMAIL_UNVERIFIED";
 
       try {

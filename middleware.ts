@@ -1,12 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
-function decodeJwtPayload(token: string): any {
+const SECRET_KEY = new TextEncoder().encode(
+  process.env.JWT_SECRET || "dropai_production_default_secret_key_change_me_in_prod"
+);
+
+async function verifyToken(token?: string): Promise<any | null> {
+  if (!token || typeof token !== "string") return null;
   try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const jsonStr = Buffer.from(base64, "base64").toString("utf-8");
-    const payload = JSON.parse(jsonStr);
+    const { payload } = await jwtVerify(token, SECRET_KEY);
     // Strict token expiration validation
     if (payload.exp && typeof payload.exp === "number" && payload.exp * 1000 < Date.now()) {
       return null;
@@ -17,11 +19,33 @@ function decodeJwtPayload(token: string): any {
   }
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 0. Path Normalization & Canonical Route Redirection
-  const canonicalRedirects: Record<string, string> = {
+  // Add security headers to all responses
+  const response = NextResponse.next();
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  // Read cookies & verify cryptographically
+  const sessionToken = request.cookies.get("dropai_session_token")?.value;
+  const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
+
+  const [sessionPayload, ownerPayload] = await Promise.all([
+    verifyToken(sessionToken),
+    verifyToken(ownerToken),
+  ]);
+
+  const isAuthenticated = Boolean(sessionPayload || ownerPayload);
+  const hasOwnerRole = Boolean(
+    (ownerPayload && (ownerPayload.role === "OWNER" || ownerPayload.role === "ADMIN")) ||
+    (sessionPayload && (sessionPayload.role === "OWNER" || sessionPayload.role === "ADMIN"))
+  );
+
+  // 0. Protected Canonical Route Aliases
+  const merchantProtectedRedirects: Record<string, string> = {
     "/dashboard": "/app/dashboard",
     "/product-research": "/app/product-research",
     "/product-research-radar": "/app/product-research",
@@ -46,8 +70,10 @@ export function middleware(request: NextRequest) {
     "/dashboard/subscription": "/app/billing",
     "/app/subscription": "/app/billing",
     "/app/subscriptions": "/app/billing",
-    "/login": "/auth/login",
-    "/signup": "/auth/signup",
+    "/social-accounts": "/app/social-accounts",
+  };
+
+  const adminProtectedRedirects: Record<string, string> = {
     "/admin": "/owner/dashboard",
     "/admin/dashboard": "/owner/dashboard",
     "/admin/users": "/owner/users",
@@ -63,52 +89,51 @@ export function middleware(request: NextRequest) {
     "/owner/subscription": "/owner/subscriptions",
   };
 
-  if (canonicalRedirects[pathname]) {
-    const targetUrl = new URL(canonicalRedirects[pathname], request.url);
-    if (request.nextUrl.search) {
-      targetUrl.search = request.nextUrl.search;
-    }
-    return NextResponse.redirect(targetUrl, 308);
+  // Auth shortcut aliases
+  if (pathname === "/login") {
+    return NextResponse.redirect(new URL("/auth/login", request.url), 307);
+  }
+  if (pathname === "/signup") {
+    return NextResponse.redirect(new URL("/auth/signup", request.url), 307);
   }
 
-  // Catch-all for any unmapped /admin/:path* routes -> redirect to /owner/:path*
-  if (pathname.startsWith("/admin/")) {
-    const subPath = pathname.slice("/admin".length);
-    const targetUrl = new URL(`/owner${subPath}`, request.url);
-    if (request.nextUrl.search) {
-      targetUrl.search = request.nextUrl.search;
+  // Handle Merchant Protected Aliases (e.g. /dashboard, /product-research, etc.)
+  if (merchantProtectedRedirects[pathname]) {
+    const targetPath = merchantProtectedRedirects[pathname];
+    if (!isAuthenticated) {
+      const loginUrl = new URL("/auth/login", request.url);
+      loginUrl.searchParams.set("redirect", targetPath);
+      return NextResponse.redirect(loginUrl, 307);
     }
-    return NextResponse.redirect(targetUrl, 308);
+    const targetUrl = new URL(targetPath, request.url);
+    if (request.nextUrl.search) targetUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(targetUrl, 307);
   }
 
-  // Add security headers to all responses
-  const response = NextResponse.next();
+  // Handle Admin Protected Aliases (e.g. /admin, /admin/users, /admin/*)
+  if (adminProtectedRedirects[pathname] || pathname.startsWith("/admin/")) {
+    const targetSubPath = adminProtectedRedirects[pathname]
+      ? adminProtectedRedirects[pathname]
+      : `/owner${pathname.slice("/admin".length)}`;
 
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "SAMEORIGIN");
-  response.headers.set("X-XSS-Protection", "1; mode=block");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    if (!hasOwnerRole) {
+      const loginUrl = new URL("/owner/login", request.url);
+      loginUrl.searchParams.set("redirect", targetSubPath);
+      return NextResponse.redirect(loginUrl, 307);
+    }
+    const targetUrl = new URL(targetSubPath, request.url);
+    if (request.nextUrl.search) targetUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(targetUrl, 307);
+  }
 
-  // Read cookies & decode payloads
-  const sessionToken = request.cookies.get("dropai_session_token")?.value;
-  const ownerToken = request.cookies.get("dropai_owner_session_token")?.value;
-
-  const sessionPayload = sessionToken ? decodeJwtPayload(sessionToken) : null;
-  const ownerPayload = ownerToken ? decodeJwtPayload(ownerToken) : null;
-
-  // Authoritative owner check: purely role-based
-  const hasOwnerRole = Boolean(
-    (ownerPayload && ownerPayload.role === "OWNER") ||
-    (sessionPayload && sessionPayload.role === "OWNER")
-  );
-
-  // 1. Protect Merchant App routes (/app/*)
+  // 1. Strict Protection for Merchant App Routes (/app/*)
   if (pathname.startsWith("/app")) {
-    if (!sessionPayload && !ownerPayload) {
+    if (!isAuthenticated) {
       const loginUrl = new URL("/auth/login", request.url);
       const redirectTarget = pathname + (request.nextUrl.search || "");
       loginUrl.searchParams.set("redirect", redirectTarget);
-      const redirectResponse = NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl, 307);
+
       if (sessionToken && !sessionPayload) {
         redirectResponse.cookies.delete("dropai_session_token");
       }
@@ -117,70 +142,42 @@ export function middleware(request: NextRequest) {
       }
       return redirectResponse;
     }
-
-    // Enforce email verification on /app/* if unverified
-    if (sessionPayload && !hasOwnerRole && sessionPayload.isEmailVerified === false) {
-      const verifyUrl = new URL("/auth/verify-email", request.url);
-      if (sessionPayload.email) {
-        verifyUrl.searchParams.set("email", sessionPayload.email);
-      }
-      return NextResponse.redirect(verifyUrl);
-    }
   }
 
-  // 2. Protect Owner Control Center routes (/owner/*)
+  // 2. Strict Protection & Isolation for Owner / Admin Routes (/owner/*)
   if (pathname.startsWith("/owner")) {
     if (pathname === "/owner/login") {
       return response;
     }
 
-    // Strict Isolation: Users authenticated as normal MERCHANTS are strictly blocked from /owner/*
-    if (sessionPayload && sessionPayload.role === "MERCHANT" && !hasOwnerRole) {
-      const loginUrl = new URL("/owner/login", request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
+    // Strict Role Separation: Normal merchants cannot access Owner routes
     if (!hasOwnerRole) {
       const loginUrl = new URL("/owner/login", request.url);
-      return NextResponse.redirect(loginUrl);
+      loginUrl.searchParams.set("redirect", pathname + (request.nextUrl.search || ""));
+      return NextResponse.redirect(loginUrl, 307);
     }
   }
 
-  // 3. Protect Merchant App API routes (/api/app/*)
+  // 3. API Protection for Merchant APIs (/api/app/*)
   if (pathname.startsWith("/api/app") && pathname !== "/api/app/seed") {
-    if (!sessionPayload && !ownerPayload) {
+    if (!isAuthenticated) {
       return NextResponse.json(
-        { error: "Access Denied: Authentication Required" },
+        { error: "Unauthorized: Authentication required to access merchant APIs." },
         { status: 401 }
       );
     }
-
-    if (sessionPayload && !hasOwnerRole && sessionPayload.isEmailVerified === false) {
-      return NextResponse.json(
-        { error: "Email verification required before accessing store APIs." },
-        { status: 403 }
-      );
-    }
   }
 
-  // 4. Protect Owner API routes (/api/owner/*)
+  // 4. API Protection for Owner APIs (/api/owner/*)
   if (pathname.startsWith("/api/owner")) {
-    const isPublicAuthRoute =
+    const isPublicOwnerAuth =
       pathname === "/api/owner/auth/verify-email" ||
       pathname === "/api/owner/auth/login";
 
-    if (!isPublicAuthRoute) {
-      // Strict Isolation: Merchant accounts cannot access owner APIs
-      if (sessionPayload && sessionPayload.role === "MERCHANT" && !hasOwnerRole) {
-        return NextResponse.json(
-          { error: "Access Denied: Merchant accounts cannot access Owner APIs." },
-          { status: 403 }
-        );
-      }
-
+    if (!isPublicOwnerAuth) {
       if (!hasOwnerRole) {
         return NextResponse.json(
-          { error: "Access Denied: Owner Authorization Required" },
+          { error: "Forbidden: Platform Owner or Admin authorization required." },
           { status: 403 }
         );
       }

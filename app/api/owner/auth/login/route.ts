@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         },
       }).catch(() => null);
 
-      const isAuthorizedOwner = hasAdminClaim || dbUser?.role === "OWNER" || firebaseEmail === "owner@dropai.io";
+      const isAuthorizedOwner = hasAdminClaim || dbUser?.role === "OWNER" || dbUser?.role === "ADMIN";
 
       if (!isAuthorizedOwner) {
         return NextResponse.json(

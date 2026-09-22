@@ -64,32 +64,6 @@ export default function DashboardPage() {
     );
   }
 
-  // If in Live Mode and no stores connected, show genuine empty state per Core Principle
-  if (!isDemoMode && (!data || !data.hasStores || data.ordersCount === 0)) {
-    return (
-      <div className="max-w-3xl mx-auto py-12 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
-          <Store className="w-8 h-8" />
-        </div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-          No Live Store Connected
-        </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-          You are currently in <strong>Live Store Mode</strong>. DropAI does not generate synthetic sales. Connect your live Shopify, WooCommerce, or custom store to start syncing real orders and analytics.
-        </p>
-        <div className="mt-6 flex items-center justify-center gap-4">
-          <Link
-            href="/app/stores"
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors flex items-center gap-2 shadow-md"
-          >
-            Connect Shopify or WooCommerce
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   const revenue = data?.totalRevenue || 0;
   const profit = data?.totalProfit || 0;
   const ordersCount = data?.ordersCount || 0;
@@ -105,11 +79,6 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Executive Dashboard
             </h1>
-            {isDemoMode && (
-              <Badge variant="warning" size="sm">
-                DEMO DATA
-              </Badge>
-            )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Real-time ecommerce telemetry and AI performance metrics.

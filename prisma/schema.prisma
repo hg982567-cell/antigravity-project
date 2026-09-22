@@ -43,6 +43,7 @@ model User {
   adCampaigns       AdCampaign[]
   aiRequests        AiRequest[]
   subscription      Subscription?
+  socialAccounts    SocialAccount[]
 }
 
 model Session {
@@ -525,3 +526,44 @@ model EmergencyLockdown {
   activatedBy          String?
   reason               String?
 }
+
+model SocialAccount {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform        String         // INSTAGRAM, TIKTOK, FACEBOOK, YOUTUBE, TWITTER, PINTEREST, LINKEDIN, OTHER
+  accountName     String         // e.g. "@mystore_official"
+  displayName     String         // e.g. "Viral Finds IG"
+  profileUrl      String?
+  accessToken     String?        // Secure API token or webhook
+  refreshToken    String?
+  apiKey          String?
+  apiSecret       String?
+  webhookUrl      String?        // Automation webhook (e.g. Zapier, Make, n8n, Publer, Buffer, or Direct)
+  status          String         @default("CONNECTED") // CONNECTED, DISCONNECTED, ERROR
+  autoPublishAds  Boolean        @default(true)
+  totalPosts      Int            @default(0)
+  lastPostedAt    DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  adPosts         SocialAdPost[]
+}
+
+model SocialAdPost {
+  id              String        @id @default(cuid())
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  adTitle         String
+  caption         String
+  hook            String?
+  cta             String?
+  mediaUrl        String?
+  platform        String
+  status          String        @default("PUBLISHED") // PUBLISHED, SCHEDULED, FAILED
+  scheduledFor    DateTime?
+  publishedAt     DateTime?     @default(now())
+  externalPostId  String?
+  createdAt       DateTime      @default(now())
+}
+

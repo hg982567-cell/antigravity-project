@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/components/providers/ThemeProvider";
@@ -8,8 +8,20 @@ import { Sparkles, Sun, Moon, Menu, X, ArrowRight, ShieldCheck } from "lucide-re
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
+
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const navLinks = [
     { name: "Features", href: "/features" },
@@ -69,20 +81,32 @@ export function Navbar() {
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          <Link
-            href="/auth/login"
-            className="hidden sm:inline-flex text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2"
-          >
-            Sign In
-          </Link>
+          {user ? (
+            <Link
+              href="/app/dashboard"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all hover:shadow-blue-500/25 active:scale-95"
+            >
+              Dashboard
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/auth/login"
+                className="hidden sm:inline-flex text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2"
+              >
+                Sign In
+              </Link>
 
-          <Link
-            href="/app/dashboard"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all hover:shadow-blue-500/25 active:scale-95"
-          >
-            Launch Platform
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+              <Link
+                href="/auth/login?redirect=/app/dashboard"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all hover:shadow-blue-500/25 active:scale-95"
+              >
+                Launch Platform
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </>
+          )}
 
           {/* Mobile menu toggle */}
           <button
@@ -109,11 +133,11 @@ export function Navbar() {
           ))}
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
             <Link
-              href="/app/dashboard"
+              href={user ? "/app/dashboard" : "/auth/login?redirect=/app/dashboard"}
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg"
             >
-              Enter Dashboard
+              {user ? "Open Dashboard" : "Sign In & Launch Platform"}
             </Link>
           </div>
         </div>

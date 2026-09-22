@@ -18,7 +18,7 @@ interface DemoContextType {
 const DemoContext = createContext<DemoContextType | undefined>(undefined);
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
   const [activeStore, setActiveStore] = useState({
     id: "store_1",
     name: "Apex Living USA",
@@ -27,9 +27,10 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
+    // Default to false (Real Mode) for genuine production operation
     const saved = localStorage.getItem("dropai_demo_mode");
-    if (saved !== null) {
-      setIsDemoMode(saved === "true");
+    if (saved === "false") {
+      setIsDemoMode(false);
     }
   }, []);
 

@@ -92,16 +92,12 @@ export async function POST(req: Request) {
           },
         },
       });
-    } catch (createErr) {
-      console.warn("User DB creation fallback in signup:", createErr);
-      user = {
-        id: `merchant_${Date.now()}`,
-        email: cleanEmail,
-        name: cleanName,
-        role: "MERCHANT",
-        status: "ACTIVE",
-        isEmailVerified: true,
-      };
+    } catch (createErr: any) {
+      console.error("User DB creation error in signup:", createErr);
+      return NextResponse.json(
+        { error: "Could not create user account in database. Please try again." },
+        { status: 500 }
+      );
     }
 
     // Create session token & cookie

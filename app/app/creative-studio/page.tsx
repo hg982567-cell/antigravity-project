@@ -14,8 +14,11 @@ import {
   Layers,
   ArrowRight,
   ShieldAlert,
+  Share2,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
+import { Modal } from "@/components/ui/Modal";
 import { useSystem } from "@/components/providers/SystemContext";
 
 export default function CreativeStudioPage() {
@@ -85,6 +88,68 @@ export default function CreativeStudioPage() {
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 1500);
+  };
+
+  const [socialAccounts, setSocialAccounts] = useState<any[]>([]);
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [selectedAdForPublish, setSelectedAdForPublish] = useState<any | null>(null);
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [publishing, setPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
+
+  const handleOpenPublishModal = async (copy: any) => {
+    setSelectedAdForPublish(copy);
+    setPublishSuccess(null);
+    setPublishModalOpen(true);
+    try {
+      const res = await fetch("/api/app/social-accounts");
+      const data = await res.json();
+      if (data.accounts) {
+        setSocialAccounts(data.accounts);
+        setSelectedAccountIds(data.accounts.filter((a: any) => a.autoPublishAds).map((a: any) => a.id));
+      }
+    } catch (e) {
+      console.error("Failed to load social accounts for publishing:", e);
+    }
+  };
+
+  const toggleAccountSelection = (id: string) => {
+    setSelectedAccountIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleExecutePublish = async () => {
+    if (!selectedAdForPublish || selectedAccountIds.length === 0) return;
+    setPublishing(true);
+    setPublishSuccess(null);
+    try {
+      const res = await fetch("/api/app/social-accounts/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountIds: selectedAccountIds,
+          adTitle: `${productName} — ${selectedAdForPublish.type}`,
+          hook: selectedAdForPublish.hook,
+          caption: selectedAdForPublish.body,
+          cta: selectedAdForPublish.cta,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPublishSuccess(data.message || `Uploaded successfully to ${data.publishedCount} accounts!`);
+        setTimeout(() => {
+          setPublishModalOpen(false);
+          setPublishSuccess(null);
+        }, 2200);
+      } else {
+        alert(data.error || "Failed to publish ad.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to publish ad.");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   return (
@@ -239,11 +304,129 @@ export default function CreativeStudioPage() {
                   <p className="text-[10px] font-bold uppercase text-slate-400">Call To Action (CTA)</p>
                   <p className="font-semibold text-blue-600 dark:text-blue-400 mt-1">{copy.cta}</p>
                 </div>
+
+                <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => handleOpenPublishModal(copy)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-xs transition-all active:scale-95"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    Auto-Upload to Social Accounts
+                  </button>
+                  <span className="text-[11px] text-slate-400">
+                    Direct brand upload
+                  </span>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       </div>
+
+      {/* Auto-Upload to Social Accounts Modal */}
+      {publishModalOpen && (
+        <Modal
+          isOpen={publishModalOpen}
+          onClose={() => setPublishModalOpen(false)}
+          title="Auto-Upload Ad to Brand Social Accounts"
+          description="Select which connected social media channels will receive this AI-generated ad copy and hook."
+        >
+          <div className="space-y-4 text-xs">
+            {publishSuccess ? (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                <span>{publishSuccess}</span>
+              </div>
+            ) : (
+              <>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Ad Angle</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">{selectedAdForPublish?.type}</p>
+                  <p className="text-slate-600 dark:text-slate-300 italic line-clamp-2 mt-1">{selectedAdForPublish?.hook}</p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="font-bold text-slate-900 dark:text-white">
+                      Select Publishing Accounts ({selectedAccountIds.length} selected):
+                    </label>
+                    <Link
+                      href="/app/social-accounts"
+                      className="text-blue-600 hover:underline font-semibold text-[11px]"
+                    >
+                      + Manage Accounts
+                    </Link>
+                  </div>
+
+                  {socialAccounts.length === 0 ? (
+                    <div className="p-6 text-center rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40">
+                      <Share2 className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">No social accounts connected yet</p>
+                      <p className="text-slate-500 text-[11px] mt-1">Connect your Instagram, TikTok, or Meta account first to enable automatic publishing.</p>
+                      <Link
+                        href="/app/social-accounts"
+                        className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold text-[11px]"
+                      >
+                        Connect Social Media Accounts →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                      {socialAccounts.map((acc) => {
+                        const isChecked = selectedAccountIds.includes(acc.id);
+                        return (
+                          <div
+                            key={acc.id}
+                            onClick={() => toggleAccountSelection(acc.id)}
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                              isChecked
+                                ? "bg-blue-50/70 dark:bg-blue-950/40 border-blue-500/50"
+                                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {}}
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                              />
+                              <div>
+                                <p className="font-bold text-slate-900 dark:text-white text-xs">{acc.displayName}</p>
+                                <p className="text-[10px] text-slate-500 font-mono">{acc.accountName}</p>
+                              </div>
+                            </div>
+                            <Badge variant="info" size="sm">{acc.platform}</Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setPublishModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecutePublish}
+                    disabled={publishing || selectedAccountIds.length === 0}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-semibold shadow-md flex items-center gap-2"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    {publishing ? "Uploading & Publishing..." : `Upload to ${selectedAccountIds.length} Account(s)`}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ export function Sidebar({
       items: [
         { name: "Ads Manager", href: "/app/ads", icon: Megaphone },
         { name: "Creative Studio", href: "/app/creative-studio", icon: Palette, badge: "AI" },
+        { name: "Social Accounts", href: "/app/social-accounts", icon: Share2, badge: "NEW" },
         { name: "Analytics", href: "/app/analytics", icon: BarChart3 },
         { name: "AI Assistant", href: "/app/ai-assistant", icon: Bot, badge: "Copilot" },
         { name: "Automations", href: "/app/automations", icon: Zap },
