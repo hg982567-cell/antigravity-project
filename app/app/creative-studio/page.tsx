@@ -51,12 +51,34 @@ export default function CreativeStudioPage() {
     },
   ]);
 
-  const handleGenerate = (e: React.FormEvent) => {
+  const [generationMeta, setGenerationMeta] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!productName.trim()) return;
     setGenerating(true);
-    setTimeout(() => {
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/ai/creative-studio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName, targetAudience, platform }),
+      });
+      const data = await res.json();
+      if (res.ok && data.copies && data.copies.length > 0) {
+        setGeneratedCopies(data.copies);
+        if (data.modelUsed) {
+          setGenerationMeta(`Live AI Generated in ${data.latencyMs || 600}ms via ${data.providerUsed || "AI"} (${data.modelUsed})`);
+        }
+      } else {
+        setErrorMsg(data.error || "Failed to generate copy");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Network error. Please try again.");
+    } finally {
       setGenerating(false);
-    }, 800);
+    }
   };
 
   const handleCopy = (text: string, index: number) => {
@@ -163,6 +185,20 @@ export default function CreativeStudioPage() {
 
         {/* Right: Generated Output Cards */}
         <div className="lg:col-span-2 space-y-4">
+          {generationMeta && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>{generationMeta}</span>
+            </div>
+          )}
+
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           {generatedCopies.map((copy, idx) => (
             <Card key={idx} className="relative overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between pb-2">

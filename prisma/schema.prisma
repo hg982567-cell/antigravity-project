@@ -421,6 +421,7 @@ model AiProviderConfig {
   id                 String   @id @default(cuid())
   provider           String   @unique // OPENAI, ANTHROPIC, GOOGLE, CUSTOM
   displayName        String
+  protocol           String   @default("OPENAI_COMPATIBLE") // OPENAI_COMPATIBLE, GOOGLE_GEMINI, ANTHROPIC
   apiKeyEncrypted    String?
   baseUrl            String?
   status             String   @default("ACTIVE") // ACTIVE, DISABLED, ERROR, NOT_CONFIGURED

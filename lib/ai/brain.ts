@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { callUniversalAi } from "@/lib/ai/universal-client";
 
 export type PermissionLevel = "READ" | "WRITE" | "HIGH_RISK";
 
@@ -263,25 +264,54 @@ export async function executeAiQuery(params: {
   }
 
   if (lowerPrompt.includes("ad") || lowerPrompt.includes("copy") || lowerPrompt.includes("campaign")) {
+    const aiRes = await callUniversalAi({
+      prompt: params.prompt,
+      systemPrompt: "You are DropAI Ad Generator. Create 3 viral, high-converting ad copy angles (TikTok hook, Meta Reels story, Google Search headline/description) for ecommerce dropshipping products. Format with clear headings, bold text, and conversion-focused CTAs.",
+      taskType: "AD_GENERATION",
+      temperature: 0.8,
+    });
+
     toolsUsed.push({
       tool: "generate_ad_copy",
       permission: "WRITE",
       status: "EXECUTED",
-      explanation: "Drafted multi-channel ad copy angles based on high-converting ecommerce frameworks.",
-      data: { platform: "Meta / TikTok" },
+      explanation: aiRes.success
+        ? `Generated live creative copy using ${aiRes.providerUsed} (${aiRes.modelUsed}) in ${aiRes.latencyMs}ms.`
+        : "Drafted multi-channel ad copy angles based on high-converting ecommerce frameworks.",
+      data: { platform: "Meta / TikTok / Google", provider: aiRes.providerUsed, model: aiRes.modelUsed },
     });
 
-    assumptions.push("Targeting cold traffic on Instagram & TikTok Reels with emotional pain-point hooks.");
+    assumptions.push(aiRes.success ? `Powered by live AI model: ${aiRes.modelUsed}` : "Targeting cold traffic on Instagram & TikTok Reels with emotional pain-point hooks.");
 
     return {
-      response: `Here are 3 high-converting creative hooks and ad copy variations:\n\n**Angle 1: The Problem Solver (Meta / Reels)**\n- **Headline:** Still struggling with bulky gear? Meet the 2026 upgrade.\n- **Primary Text:** Over 12,000 customers switched to our ergonomic ultra-portable design this month. 4.9-star rating, free tracked 5-day shipping, and 30-day risk-free guarantee.\n- **Call to Action:** Shop Now (Save 30% Today)\n\n**Angle 2: The Viral Hook (TikTok / Shorts)**\n- **Hook (0-3s):** "I was skeptical until this arrived in the mail yesterday..."\n- **Body:** Show rapid unboxing + immediate tactile proof.\n\n**Angle 3: Scarcity & Offer**\n- **Headline:** Restocked in limited batches. Grab yours before it sells out again.\n\nWould you like me to push this directly into your **Creative Studio** or create an ad draft in **Ads Manager**?`,
+      response: aiRes.success
+        ? aiRes.text
+        : `Here are 3 high-converting creative hooks and ad copy variations:\n\n**Angle 1: The Problem Solver (Meta / Reels)**\n- **Headline:** Still struggling with bulky gear? Meet the 2026 upgrade.\n- **Primary Text:** Over 12,000 customers switched to our ergonomic ultra-portable design this month. 4.9-star rating, free tracked 5-day shipping, and 30-day risk-free guarantee.\n- **Call to Action:** Shop Now (Save 30% Today)\n\n**Angle 2: The Viral Hook (TikTok / Shorts)**\n- **Hook (0-3s):** "I was skeptical until this arrived in the mail yesterday..."\n- **Body:** Show rapid unboxing + immediate tactile proof.\n\n**Angle 3: Scarcity & Offer**\n- **Headline:** Restocked in limited batches. Grab yours before it sells out again.\n\nWould you like me to push this directly into your **Creative Studio** or create an ad draft in **Ads Manager**?`,
       toolsUsed,
       assumptions,
       executionTimeMs: Date.now() - startTime,
     };
   }
 
-  // Generic fallback with business intelligence suggestions
+  // Live Universal Generative AI Response for general / strategic inquiries
+  const generalAiRes = await callUniversalAi({
+    prompt: params.prompt,
+    systemPrompt: "You are DropAI Brain, the ultimate AI ecommerce and dropshipping co-founder. You assist merchants with scaling their online stores, analyzing supplier logistics, optimizing ads on TikTok and Meta, improving conversion rates, and managing inventory. Give clear, actionable, expert responses formatted with clean markdown.",
+    taskType: "GENERAL",
+    temperature: 0.7,
+  });
+
+  if (generalAiRes.success && generalAiRes.text) {
+    assumptions.push(`Intelligence provided by ${generalAiRes.providerUsed} (${generalAiRes.modelUsed}) in ${generalAiRes.latencyMs}ms.`);
+    return {
+      response: generalAiRes.text,
+      toolsUsed,
+      assumptions,
+      executionTimeMs: Date.now() - startTime,
+    };
+  }
+
+  // Fallback with business intelligence suggestions if AI is unreachable
   assumptions.push("No specific automated tool matched; providing conversational business copilot guidance.");
 
   return {

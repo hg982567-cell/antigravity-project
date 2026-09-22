@@ -232,6 +232,163 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, rule: updated });
     }
 
+    // 3. Test AI Connection live
+    if (action === "test_connection") {
+      const { provider, displayName, protocol, apiKey, baseUrl, modelName } = data || {};
+      const { testAiConnection } = await import("@/lib/ai/universal-client");
+      const result = await testAiConnection({
+        provider: provider || "CUSTOM",
+        displayName: displayName || "AI Provider",
+        protocol: protocol || "OPENAI_COMPATIBLE",
+        apiKey,
+        baseUrl,
+        modelName,
+      });
+      return NextResponse.json(result);
+    }
+
+    // 4. Create Custom AI Model / Provider
+    if (action === "create_custom_provider") {
+      const { displayName, protocol, apiKey, baseUrl, modelName, taskType, isDefault } = data || {};
+      if (!displayName || !apiKey) {
+        return NextResponse.json({ error: "Display Name and API Key are required." }, { status: 400 });
+      }
+
+      const slug = displayName.toUpperCase().replace(/[^A-Z0-9]/g, "_").slice(0, 15);
+      const uniqueCode = `CUSTOM_${slug}_${Date.now().toString(36).toUpperCase()}`;
+
+      if (isDefault) {
+        await prisma.aiProviderConfig.updateMany({
+          data: { isDefault: false },
+        });
+      }
+
+      const newProvider = await prisma.aiProviderConfig.create({
+        data: {
+          provider: uniqueCode,
+          displayName,
+          protocol: protocol || "OPENAI_COMPATIBLE",
+          apiKeyEncrypted: apiKey,
+          baseUrl: baseUrl || null,
+          status: "ACTIVE",
+          priority: 1,
+          isDefault: !!isDefault,
+          modelsJson: JSON.stringify([modelName || "default-model"]),
+          rateLimitPerMin: 120,
+          dailyTokenLimit: 5000000,
+        },
+      });
+
+      // Task assignment
+      if (taskType && taskType !== "NONE") {
+        if (taskType === "ALL") {
+          await prisma.aiRoutingRule.updateMany({
+            data: {
+              providerName: uniqueCode,
+              modelName: modelName || "default-model",
+            },
+          });
+        } else {
+          await prisma.aiRoutingRule.upsert({
+            where: { taskType },
+            update: {
+              providerName: uniqueCode,
+              modelName: modelName || "default-model",
+              isEnabled: true,
+            },
+            create: {
+              taskType,
+              providerName: uniqueCode,
+              modelName: modelName || "default-model",
+              isEnabled: true,
+            },
+          });
+        }
+      }
+
+      await logOwnerAction({
+        ownerId: owner.id,
+        action: "AI_CUSTOM_PROVIDER_CREATED",
+        targetType: "AI",
+        targetId: newProvider.id,
+        newValue: { displayName, provider: uniqueCode, modelName, taskType },
+        severity: "WARNING",
+        ipAddress: ip,
+        userAgent,
+      });
+
+      return NextResponse.json({ success: true, provider: newProvider });
+    }
+
+    // 5. Delete Provider
+    if (action === "delete_provider") {
+      const existing = await prisma.aiProviderConfig.findUnique({ where: { id: providerId } });
+      if (!existing) {
+        return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+      }
+
+      await prisma.aiRoutingRule.updateMany({
+        where: { providerName: existing.provider },
+        data: { providerName: "GOOGLE", modelName: "gemini-3.6-flash" },
+      });
+
+      await prisma.aiProviderConfig.delete({ where: { id: providerId } });
+
+      await logOwnerAction({
+        ownerId: owner.id,
+        action: "AI_PROVIDER_DELETED",
+        targetType: "AI",
+        targetId: providerId,
+        previousValue: existing,
+        severity: "WARNING",
+        ipAddress: ip,
+        userAgent,
+      });
+
+      return NextResponse.json({ success: true, deletedId: providerId });
+    }
+
+    // 6. Update Provider Key / Settings
+    if (action === "update_provider_key") {
+      const { apiKey, baseUrl, modelName, protocol } = data || {};
+      const existing = await prisma.aiProviderConfig.findUnique({ where: { id: providerId } });
+      if (!existing) {
+        return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+      }
+
+      let models = [modelName];
+      if (!modelName) {
+        try {
+          models = JSON.parse(existing.modelsJson || "[]");
+        } catch {
+          models = ["default"];
+        }
+      }
+
+      const updated = await prisma.aiProviderConfig.update({
+        where: { id: providerId },
+        data: {
+          apiKeyEncrypted: apiKey !== undefined ? apiKey : existing.apiKeyEncrypted,
+          baseUrl: baseUrl !== undefined ? baseUrl : existing.baseUrl,
+          protocol: protocol || existing.protocol,
+          modelsJson: modelName ? JSON.stringify(models) : existing.modelsJson,
+        },
+      });
+
+      await logOwnerAction({
+        ownerId: owner.id,
+        action: "AI_PROVIDER_KEY_UPDATED",
+        targetType: "AI",
+        targetId: providerId,
+        newValue: { provider: existing.provider, keyUpdated: !!apiKey },
+        severity: "WARNING",
+        ipAddress: ip,
+        userAgent,
+      });
+
+      return NextResponse.json({ success: true, provider: updated });
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED_OWNER") {
