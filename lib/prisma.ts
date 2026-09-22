@@ -5,6 +5,7 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
+// Priority database connection resolution: DROPAI_DATABASE_URL > NEON_DATABASE_URL > DATABASE_URL
 const activeDbUrl =
   process.env.DROPAI_DATABASE_URL ||
   process.env.NEON_DATABASE_URL ||
