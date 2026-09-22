@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Globe,
   Sliders,
+  BookOpen,
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
@@ -38,9 +39,21 @@ export default async function HomePage() {
         <section className="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-32 border-b border-slate-200/80 dark:border-slate-800/80">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {/* Tagline Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold mb-4">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Next-Generation Dropshipping Operating System</span>
+            </div>
+
+            {/* Knowledge Base Announcement Banner */}
+            <div className="mb-6 flex justify-center">
+              <Link
+                href="/help"
+                className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:border-emerald-400 transition-all shadow-xs"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span><strong>New:</strong> DropAI Knowledge Base &amp; Technical Documentation (42 Guides)</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </div>
 
             {/* Headline */}
@@ -519,6 +532,92 @@ export default async function HomePage() {
                 </div>
               </>
             )}
+          </div>
+        </section>
+
+        {/* 12b. Documentation & Knowledge Base Showcase */}
+        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-200/80 dark:border-slate-800/80">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+              DropAI Knowledge Base
+            </span>
+            <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Production Documentation &amp; Technical Guides
+            </h2>
+            <p className="mt-4 text-slate-600 dark:text-slate-300">
+              42 comprehensive, production-grade technical articles across 10 categories. Learn how our multi-tenant database, 3-tier AI permissions, Shopify OAuth PKCE, and real order routing work.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                title: "Getting Started & Core Concepts",
+                count: "5 Articles",
+                desc: "Architecture overview, Quickstart walkthrough, Currency engine with USD base, and live store activation.",
+                href: "/help/category/getting-started",
+              },
+              {
+                title: "Shopify Integration & OAuth PKCE",
+                count: "4 Articles",
+                desc: "Official OAuth 2.0 PKCE handshake, webhook signatures, catalog sync, and zero-token exposure.",
+                href: "/help/category/shopify-integration",
+              },
+              {
+                title: "Database & Multi-Tenant Security",
+                count: "4 Articles",
+                desc: "Neon PostgreSQL row-level isolation, encrypted credentials, JWT httpOnly cookies, and audit logging.",
+                href: "/help/category/security-compliance",
+              },
+              {
+                title: "AI Engine & 3-Tier Permissions",
+                count: "5 Articles",
+                desc: "Safe read/write/high-risk action boundaries, Gemini 3.6 Flash integration, and zero-hallucination tools.",
+                href: "/help/category/ai-assistant",
+              },
+              {
+                title: "Real Order & Supplier Routing",
+                count: "4 Articles",
+                desc: "Automated fulfillment via Zendrop, AliExpress, CJ Dropshipping APIs, and tracking sync.",
+                href: "/help/category/order-fulfillment",
+              },
+              {
+                title: "Owner Command Center",
+                count: "4 Articles",
+                desc: "Platform administration, real-time metrics, role-based access control, and documentation CMS.",
+                href: "/help/category/platform-admin",
+              },
+            ].map((cat, idx) => (
+              <Link
+                key={idx}
+                href={cat.href}
+                className="group p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 hover:shadow-lg transition-all"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                    {cat.count}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {cat.title}
+                </h3>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {cat.desc}
+                </p>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/help"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold text-xs hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors shadow-sm"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Browse All 42 Technical Guides in Help Center</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </section>
 

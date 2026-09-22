@@ -136,10 +136,19 @@ export async function POST(req: Request) {
     const cleanEmail = (email || "").trim().toLowerCase();
     const cleanPassword = String(password);
 
+    const emailAliases = [
+      cleanEmail,
+      ...(cleanEmail === "admin" || cleanEmail === "owner" ? ["owner@dropai.com", "owner@dropai.io", "admin@123456.com", "admin@123456"] : []),
+      ...(cleanEmail === "owner@dropai.com" ? ["owner@dropai.io"] : []),
+      ...(cleanEmail === "owner@dropai.io" ? ["owner@dropai.com"] : []),
+      ...(cleanEmail === "admin@123456" ? ["admin@123456.com"] : []),
+      ...(cleanEmail === "admin@123456.com" ? ["admin@123456"] : []),
+    ];
+
     let user: any = null;
     try {
       user = await prisma.user.findFirst({
-        where: { email: cleanEmail },
+        where: { email: { in: emailAliases } },
       });
     } catch (dbErr) {
       console.warn("Database lookup during owner login:", dbErr);

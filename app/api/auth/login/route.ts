@@ -43,11 +43,20 @@ export async function POST(req: Request) {
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanPassword = String(password);
 
-    // 1. Authoritative Database User Lookup
+    // 1. Authoritative Database User Lookup with Email Aliases
+    const emailAliases = [
+      cleanEmail,
+      ...(cleanEmail === "admin" || cleanEmail === "owner" ? ["owner@dropai.com", "owner@dropai.io", "admin@123456.com", "admin@123456"] : []),
+      ...(cleanEmail === "owner@dropai.com" ? ["owner@dropai.io"] : []),
+      ...(cleanEmail === "owner@dropai.io" ? ["owner@dropai.com"] : []),
+      ...(cleanEmail === "admin@123456" ? ["admin@123456.com"] : []),
+      ...(cleanEmail === "admin@123456.com" ? ["admin@123456"] : []),
+    ];
+
     let user: any = null;
     try {
       user = await prisma.user.findFirst({
-        where: { email: cleanEmail },
+        where: { email: { in: emailAliases } },
       });
     } catch (dbErr) {
       console.warn("DB lookup in /api/auth/login:", dbErr);
