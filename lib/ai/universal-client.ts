@@ -72,7 +72,10 @@ export async function testAiConnection(config: TestConnectionOptions): Promise<{
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: "Hello! Respond with 'AI Connection Successful' in 3 words." }] }],
-          generationConfig: { maxOutputTokens: 20 },
+          generationConfig: {
+            maxOutputTokens: 200,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
       });
 
@@ -293,6 +296,7 @@ export async function callUniversalAi(options: UniversalAiCallOptions): Promise<
             generationConfig: {
               temperature,
               maxOutputTokens: maxTokens,
+              thinkingConfig: { thinkingBudget: 0 },
             },
           }),
         });
