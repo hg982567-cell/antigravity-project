@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { articleSlug, isHelpful, comment } = body;
 
     if (!articleSlug || typeof isHelpful !== "boolean") {
@@ -36,7 +36,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Article not found." }, { status: 404 });
     }
 
-    const user = await getCurrentUser().catch(() => null);
+    let user = null;
+    try {
+      user = await getCurrentUser();
+    } catch {
+      // Unauthenticated visitor feedback is permitted
+    }
 
     // Record feedback in database
     await prisma.articleFeedback.create({
@@ -74,7 +79,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("POST /api/docs/feedback error:", error);
     return NextResponse.json(
-      { error: "Failed to record article feedback." },
+      { error: error?.message || "Failed to record article feedback." },
       { status: 500 }
     );
   }
