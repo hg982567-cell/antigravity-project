@@ -30,7 +30,12 @@ if (fs.existsSync(envPath)) {
 }
 
 let schema = fs.readFileSync(schemaPath, "utf8");
-const dbUrl = (process.env.DATABASE_URL || "").trim();
+const dbUrl = (
+  process.env.DROPAI_DATABASE_URL ||
+  process.env.NEON_DATABASE_URL ||
+  process.env.DATABASE_URL ||
+  ""
+).trim();
 
 let isPostgres = false;
 if (target === "postgres" || target === "postgresql") {
@@ -50,7 +55,19 @@ if (target === "postgres" || target === "postgresql") {
 
 if (isPostgres) {
   schema = schema.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
-  const directVar = process.env.DIRECT_URL
+  const primaryDbVar = process.env.DROPAI_DATABASE_URL
+    ? "DROPAI_DATABASE_URL"
+    : process.env.NEON_DATABASE_URL
+    ? "NEON_DATABASE_URL"
+    : "DATABASE_URL";
+
+  schema = schema.replace(/url\s*=\s*env\("[^"]+"\)/, `url       = env("${primaryDbVar}")`);
+
+  const directVar = process.env.DROPAI_DIRECT_URL
+    ? "DROPAI_DIRECT_URL"
+    : process.env.NEON_DIRECT_URL
+    ? "NEON_DIRECT_URL"
+    : process.env.DIRECT_URL
     ? "DIRECT_URL"
     : process.env.DATABASE_URL_UNPOOLED
     ? "DATABASE_URL_UNPOOLED"
@@ -61,8 +78,8 @@ if (isPostgres) {
   if (directVar) {
     if (!schema.includes("directUrl")) {
       schema = schema.replace(
-        /url\s*=\s*env\("DATABASE_URL"\)/,
-        `url       = env("DATABASE_URL")\n  directUrl = env("${directVar}")`
+        /url\s*=\s*env\("[^"]+"\)/,
+        `url       = env("${primaryDbVar}")\n  directUrl = env("${directVar}")`
       );
     } else {
       schema = schema.replace(/directUrl\s*=\s*env\("[^"]+"\)/, `directUrl = env("${directVar}")`);
