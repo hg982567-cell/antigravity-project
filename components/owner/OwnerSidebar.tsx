@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Store,
   BookOpen,
+  LifeBuoy,
 } from "lucide-react";
 
 interface OwnerSidebarProps {
@@ -87,6 +88,12 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
       title: "DISASTER RECOVERY",
       items: [
         { label: "Backups & Recovery", href: "/owner/recovery", icon: Database },
+      ],
+    },
+    {
+      title: "SUPPORT & COMPLAINTS",
+      items: [
+        { label: "Customer Support Desk", href: "/owner/support", icon: LifeBuoy },
       ],
     },
     {

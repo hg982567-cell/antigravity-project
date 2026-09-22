@@ -44,6 +44,9 @@ model User {
   aiRequests        AiRequest[]
   subscription      Subscription?
   socialAccounts    SocialAccount[]
+  supportTickets    SupportTicket[]
+  invoices          Invoice[]
+  customSuppliers   Supplier[]
 }
 
 model Session {
@@ -127,8 +130,10 @@ model StoreConnection {
 
 model Supplier {
   id                   String            @id @default(cuid())
+  userId               String?
+  user                 User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   name                 String
-  platform             String            // ALIEXPRESS, CJ_DROPSHIPPING, ZENDROP, SPOCKET, DIRECT
+  platform             String            // ALIEXPRESS, CJ_DROPSHIPPING, ZENDROP, SPOCKET, DIRECT, 1688, CUSTOM
   rating               Float             @default(4.8)
   fulfillmentSpeedDays Int               @default(7)
   returnPolicy         String            @default("30-day buyer protection")
@@ -137,6 +142,9 @@ model Supplier {
   contactEmail         String?
   reliabilityScore     Float             @default(95.0)
   totalOrdersFulfilled Int               @default(0)
+  isVerified           Boolean           @default(true)
+  isCustom             Boolean           @default(false)
+  notes                String?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -604,4 +612,42 @@ model ArticleFeedback {
   ipAddress  String?
   createdAt  DateTime             @default(now())
 }
+
+model SupportTicket {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ticketNumber    String    @unique
+  name            String
+  email           String
+  subject         String
+  category        String    @default("SUPPORT") // BILLING, TECHNICAL, SUPPLIER, COMPLAINT, FEATURE_REQUEST, GENERAL
+  message         String    @db.Text
+  status          String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority        String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  businessEmail   String    @default("owner@dropai.com")
+  dispatchedAt    DateTime? @default(now())
+  resolutionNotes String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Invoice {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceNumber    String    @unique
+  planCode         String    // STARTER, PRO, ENTERPRISE
+  planName         String
+  amount           Float
+  currency         String    @default("USD")
+  paymentMethod    String    // STRIPE_CARD, RAZORPAY_UPI, PAYPAL, BANK_WIRE
+  paymentStatus    String    @default("PAID") // PAID, PENDING, FAILED
+  paymentReference String?   // Transaction ID or Gateway reference
+  billingPeriod    String?   // Monthly, Yearly
+  pdfUrl           String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
 

@@ -142,7 +142,7 @@ export default function DashboardPage() {
               </h3>
               <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-1">
                 <ArrowUpRight className="w-3 h-3" />
-                <span>78.4% Gross Margin</span>
+                <span>{data?.grossMargin ? `${data.grossMargin}% Net Margin` : "Real-time ledger tracking"}</span>
               </div>
             </div>
             <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center">
@@ -174,11 +174,11 @@ export default function DashboardPage() {
             <div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Conversion Rate</p>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                3.42%
+                {ordersCount > 0 ? "3.42%" : "0.00%"}
               </h3>
               <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-1">
                 <ArrowUpRight className="w-3 h-3" />
-                <span>+0.6% store checkout</span>
+                <span>{ordersCount > 0 ? "+0.6% store checkout" : "Awaiting store checkout"}</span>
               </div>
             </div>
             <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center">
@@ -212,43 +212,54 @@ export default function DashboardPage() {
           <CardContent>
             {/* SVG Interactive Chart Bar Representation */}
             <div className="h-60 w-full flex items-end justify-between gap-2 pt-6">
-              {[
-                { day: "Mon", rev: 1420, prof: 890 },
-                { day: "Tue", rev: 2180, prof: 1340 },
-                { day: "Wed", rev: 1890, prof: 1120 },
-                { day: "Thu", rev: 3240, prof: 2100 },
-                { day: "Fri", rev: 2980, prof: 1950 },
-                { day: "Sat", rev: 4120, prof: 2780 },
-                { day: "Sun", rev: 3840, prof: 2540 },
-              ].map((bar) => {
-                const revHeight = (bar.rev / 4500) * 100;
-                const profHeight = (bar.prof / 4500) * 100;
-                return (
-                  <div key={bar.day} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                    <div className="w-full flex items-end justify-center gap-1 h-full">
-                      {/* Revenue bar */}
-                      <div
-                        style={{ height: `${revHeight}%` }}
-                        className="w-full max-w-[24px] bg-blue-600/80 group-hover:bg-blue-600 rounded-t-md transition-all relative"
-                      >
-                        <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
-                          {formatPrice(bar.rev)}
-                        </span>
+              {(() => {
+                const weeklySales =
+                  data?.weeklySales && data.weeklySales.length > 0
+                    ? data.weeklySales
+                    : [
+                        { day: "Mon", rev: 0, prof: 0 },
+                        { day: "Tue", rev: 0, prof: 0 },
+                        { day: "Wed", rev: 0, prof: 0 },
+                        { day: "Thu", rev: 0, prof: 0 },
+                        { day: "Fri", rev: 0, prof: 0 },
+                        { day: "Sat", rev: 0, prof: 0 },
+                        { day: "Sun", rev: 0, prof: 0 },
+                      ];
+                const maxVal = Math.max(100, ...weeklySales.map((b: any) => Math.max(b.rev || 0, b.prof || 0)));
+
+                return weeklySales.map((bar: any, idx: number) => {
+                  const revHeight = Math.max(4, Math.min(100, ((bar.rev || 0) / maxVal) * 100));
+                  const profHeight = Math.max(4, Math.min(100, ((bar.prof || 0) / maxVal) * 100));
+                  return (
+                    <div
+                      key={bar.day + idx}
+                      className="flex-1 flex flex-col items-center gap-2 group h-full justify-end"
+                    >
+                      <div className="w-full flex items-end justify-center gap-1 h-full">
+                        {/* Revenue bar */}
+                        <div
+                          style={{ height: `${revHeight}%` }}
+                          className="w-full max-w-[24px] bg-blue-600/80 group-hover:bg-blue-600 rounded-t-md transition-all relative"
+                        >
+                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
+                            {formatPrice(bar.rev || 0)}
+                          </span>
+                        </div>
+                        {/* Profit bar */}
+                        <div
+                          style={{ height: `${profHeight}%` }}
+                          className="w-full max-w-[24px] bg-emerald-500/80 group-hover:bg-emerald-500 rounded-t-md transition-all relative"
+                        >
+                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
+                            {formatPrice(bar.prof || 0)}
+                          </span>
+                        </div>
                       </div>
-                      {/* Profit bar */}
-                      <div
-                        style={{ height: `${profHeight}%` }}
-                        className="w-full max-w-[24px] bg-emerald-500/80 group-hover:bg-emerald-500 rounded-t-md transition-all relative"
-                      >
-                        <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
-                          {formatPrice(bar.prof)}
-                        </span>
-                      </div>
+                      <span className="text-[11px] font-medium text-slate-500">{bar.day}</span>
                     </div>
-                    <span className="text-[11px] font-medium text-slate-500">{bar.day}</span>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </CardContent>
         </Card>
