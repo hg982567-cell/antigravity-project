@@ -19,6 +19,7 @@ import {
   isFirebaseConfigured,
   formatFirebaseAuthError,
 } from "@/lib/firebase/client";
+import { BrandLogo } from "@/components/common/BrandLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -151,14 +152,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <span className="font-extrabold text-2xl tracking-tight text-slate-900 dark:text-white">
-            DropAI
-          </span>
-        </Link>
+        <div className="flex justify-center">
+          <BrandLogo size="lg" href="/" />
+        </div>
         <h2 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
           Sign in to your merchant dashboard
         </h2>

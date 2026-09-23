@@ -211,7 +211,7 @@ export default function ShippingPage() {
               <div className="relative">
                 <div className="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700" />
                 <p className="font-semibold text-slate-700 dark:text-slate-300">Shipping Label Created & Order Auto-Dispatched</p>
-                <p className="text-slate-400 text-[10px]">DropAI Automation Engine • 3 days ago</p>
+                <p className="text-slate-400 text-[10px]">RAVAN SHIPPING Automation Engine • 3 days ago</p>
               </div>
             </div>
           </div>

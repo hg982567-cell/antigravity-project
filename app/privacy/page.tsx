@@ -21,7 +21,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">1. Data Ownership & Tenant Isolation</h2>
               <p>
-                DropAI strictly operates on a single-tenant data isolation principle within our relational database layer. Your customer orders, product catalogs, supplier configurations, and advertising metrics are protected by server-side tenancy verification. We do not sell or share your store data with third-party advertisers or competing merchants.
+                RAVAN SHIPPING strictly operates on a single-tenant data isolation principle within our relational database layer. Your customer orders, product catalogs, supplier configurations, and advertising metrics are protected by server-side tenancy verification. We do not sell or share your store data with third-party advertisers or competing merchants.
               </p>
             </section>
 
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">3. Drop AI Brain Security & Tool Calls</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">3. RAVAN SHIPPING AI Security & Tool Calls</h2>
               <p>
                 Our AI processing layer operates through controlled, permission-gated tools. Your sensitive store secrets, raw payment numbers, and cryptographic keys are never passed to external AI models. All tool executions are logged immutably in your security audit trail.
               </p>
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">4. Your Data Rights (GDPR & CCPA)</h2>
               <p>
-                You retain full rights to request data export, anonymization, or permanent deletion of your account and all associated store connections at any time via your Security Center or by contacting privacy@dropai.io.
+                You retain full rights to request data export, anonymization, or permanent deletion of your account and all associated store connections at any time via your Security Center or by contacting privacy@ravanshipping.com.
               </p>
             </section>
           </div>

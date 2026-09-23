@@ -123,7 +123,7 @@ export async function POST(req: Request) {
         where: { id: userId },
         data: {
           isSuspended: true,
-          suspendedReason: reason || "Administrative suspension by DropAI Owner.",
+          suspendedReason: reason || "Administrative suspension by RAVAN SHIPPING Owner.",
           suspendedAt: new Date(),
         },
       });

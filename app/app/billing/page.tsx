@@ -639,7 +639,7 @@ export default function BillingPage() {
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
                             `upi://pay?pa=${gatewayConfig?.upiDetails?.upiId || "owner@okhdfcbank"}&pn=${encodeURIComponent(
-                              gatewayConfig?.upiDetails?.upiName || "DropAI Platform Commercial"
+                              gatewayConfig?.upiDetails?.upiName || "RAVAN SHIPPING Commercial Payouts"
                             )}&cu=INR`
                           )}`}
                           alt="Platform Owner UPI QR Code"
@@ -647,7 +647,7 @@ export default function BillingPage() {
                         />
                         <div className="text-xs space-y-1 text-center sm:text-left">
                           <p className="font-bold text-slate-900 dark:text-white">
-                            Payee: {gatewayConfig?.upiDetails?.upiName || "DropAI Platform Commercial"}
+                            Payee: {gatewayConfig?.upiDetails?.upiName || "RAVAN SHIPPING Commercial Payouts"}
                           </p>
                           <p className="font-mono text-amber-600 dark:text-amber-400 font-bold text-xs select-all">
                             UPI ID: {gatewayConfig?.upiDetails?.upiId || "owner@okhdfcbank"}
@@ -717,7 +717,7 @@ export default function BillingPage() {
                         </p>
                         <div className="font-mono text-[11px] space-y-0.5 text-slate-700 dark:text-slate-300 mt-2">
                           <p>Bank: <strong className="text-slate-900 dark:text-white">{gatewayConfig?.bankDetails?.bankName || "HDFC Bank Ltd"}</strong></p>
-                          <p>Beneficiary: <strong className="text-slate-900 dark:text-white">{gatewayConfig?.bankDetails?.accountName || "DropAI Technologies Commercial"}</strong></p>
+                          <p>Beneficiary: <strong className="text-slate-900 dark:text-white">{gatewayConfig?.bankDetails?.accountName || "RAVAN SHIPPING Commercial Payouts"}</strong></p>
                           <p>Account #: <strong className="text-amber-600 dark:text-amber-400 font-bold select-all">{gatewayConfig?.bankDetails?.accountNumber || "50200084920194"}</strong></p>
                           <p>IFSC Code: <strong className="text-slate-900 dark:text-white select-all">{gatewayConfig?.bankDetails?.ifscSwift || "HDFC0001234"}</strong></p>
                           <p>Branch: <span className="text-slate-500">{gatewayConfig?.bankDetails?.branch || "Financial District, Mumbai"}</span></p>
@@ -776,7 +776,7 @@ export default function BillingPage() {
                     <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
                       <p className="font-semibold text-slate-900 dark:text-white">International PayPal Transfer</p>
                       <p className="text-slate-500">
-                        Send payment to our commercial PayPal account: <strong>billing@dropai.io</strong>
+                        Send payment to our commercial PayPal account: <strong>billing@ravanshipping.com</strong>
                       </p>
                       <div>
                         <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">

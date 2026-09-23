@@ -75,7 +75,7 @@ export default function PricingPage() {
               Invest in precision, not hollow promises
             </h1>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
-              No revenue cuts, no surprise usage penalties. Every plan includes full access to the Drop AI Brain.
+              No revenue cuts, no surprise usage penalties. Every plan includes full access to the AI Brain.
             </p>
 
             {/* Billing Toggle */}

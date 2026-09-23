@@ -115,7 +115,7 @@ export default function SupplierDetailPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
             <p><strong>Replacement Guarantee:</strong> {supplier.returnPolicy}</p>
-            <p><strong>Dispute Resolution:</strong> Automated claim submission supported via DropAI webhook integration. Damaged goods re-dispatched within 24 hours.</p>
+            <p><strong>Dispute Resolution:</strong> Automated claim submission supported via RAVAN SHIPPING webhook integration. Damaged goods re-dispatched within 24 hours.</p>
             <p><strong>Total Historical Orders Fulfilled:</strong> {supplier.totalOrdersFulfilled.toLocaleString()} units with 0.4% recorded defect rate.</p>
           </CardContent>
         </Card>

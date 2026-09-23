@@ -51,7 +51,7 @@ export default async function HomePage() {
                 className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:border-emerald-400 transition-all shadow-xs"
               >
                 <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span><strong>New:</strong> DropAI Knowledge Base &amp; Technical Documentation (42 Guides)</span>
+                <span><strong>New:</strong> RAVAN SHIPPING Knowledge Base &amp; Technical Documentation (42 Guides)</span>
                 <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
@@ -66,7 +66,7 @@ export default async function HomePage() {
 
             {/* Subhead with realistic, honest value prop */}
             <p className="mt-6 text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              DropAI helps ecommerce operators discover high-demand products, verify supplier fulfillment reliability, automate order routing, and scale ads with structured intelligence.
+              RAVAN SHIPPING helps ecommerce operators discover high-demand products, verify supplier fulfillment reliability, automate order routing, and scale ads with structured intelligence.
             </p>
 
             {/* CTA Buttons */}
@@ -99,7 +99,7 @@ export default async function HomePage() {
                     <div className="w-3 h-3 rounded-full bg-red-500" />
                     <div className="w-3 h-3 rounded-full bg-yellow-500" />
                     <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className="text-xs font-mono text-slate-400 ml-2">dropai.io/app/dashboard</span>
+                    <span className="text-xs font-mono text-slate-400 ml-2">ravanshipping.com/app/dashboard</span>
                   </div>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                     Live Verified Data
@@ -137,13 +137,13 @@ export default async function HomePage() {
         <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-              How DropAI Works
+              How RAVAN SHIPPING Works
             </h2>
             <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               An interconnected operating system for serious merchants
             </p>
             <p className="mt-4 text-slate-600 dark:text-slate-300">
-              Unlike generic Chrome extensions and one-off tools, DropAI unifies market discovery, supplier contracts, automated fulfillment, and ad creation into one secure database.
+              Unlike generic Chrome extensions and one-off tools, RAVAN SHIPPING unifies market discovery, supplier contracts, automated fulfillment, and ad creation into one secure database.
             </p>
           </div>
 
@@ -295,7 +295,7 @@ export default async function HomePage() {
                 Eliminate fulfillment disasters before they ruin your brand
               </h2>
               <p className="mt-4 text-slate-600 dark:text-slate-300 leading-relaxed">
-                DropAI monitors real supplier inventory fluctuations, warehouse lead times, and carrier delays. If your primary factory runs out of stock, DropAI automatically reroutes orders to an approved alternate.
+                RAVAN SHIPPING monitors real supplier inventory fluctuations, warehouse lead times, and carrier delays. If your primary factory runs out of stock, RAVAN SHIPPING automatically reroutes orders to an approved alternate.
               </p>
               <div className="mt-6">
                 <Link
@@ -320,7 +320,7 @@ export default async function HomePage() {
               End-to-End Order & Inventory Automation
             </h2>
             <p className="mt-4 text-slate-600 dark:text-slate-300">
-              When a customer places an order on your store, DropAI verifies the transaction, checks fraud indicators, passes the details to your verified supplier, and uploads tracking back to the customer automatically.
+              When a customer places an order on your store, RAVAN SHIPPING verifies the transaction, checks fraud indicators, passes the details to your verified supplier, and uploads tracking back to the customer automatically.
             </p>
           </div>
 
@@ -333,7 +333,7 @@ export default async function HomePage() {
             <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
               <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-bold">STEP 02</span>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-1">Fraud & Stock Audit</h3>
-              <p className="text-xs text-slate-500 mt-2">DropAI checks risk score and verifies warehouse inventory levels.</p>
+              <p className="text-xs text-slate-500 mt-2">RAVAN SHIPPING checks risk score and verifies warehouse inventory levels.</p>
             </div>
             <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
               <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-bold">STEP 03</span>
@@ -539,7 +539,7 @@ export default async function HomePage() {
         <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-200/80 dark:border-slate-800/80">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-              DropAI Knowledge Base
+              RAVAN SHIPPING Knowledge Base
             </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Production Documentation &amp; Technical Guides
@@ -636,20 +636,20 @@ export default async function HomePage() {
             <div className="space-y-4">
               {[
                 {
-                  q: "Does DropAI guarantee store profits or sales?",
-                  a: "No. Anyone promising guaranteed profits in ecommerce is misleading you. DropAI provides rigorous data intelligence, supplier verification, and automated workflows so you make informed decisions with higher statistical probability of success.",
+                  q: "Does RAVAN SHIPPING guarantee store profits or sales?",
+                  a: "No. Anyone promising guaranteed profits in ecommerce is misleading you. RAVAN SHIPPING provides rigorous data intelligence, supplier verification, and automated workflows so you make informed decisions with higher statistical probability of success.",
                 },
                 {
                   q: "How does the AI Assistant execute actions?",
-                  a: "DropAI uses a 3-tier permission model. READ actions (like querying orders or analytics) execute immediately. WRITE actions (like drafting a product listing) create drafts. HIGH RISK actions (like cancelling orders or deleting catalog items) require your explicit confirmation in an interactive modal.",
+                  a: "RAVAN SHIPPING uses a 3-tier permission model. READ actions (like querying orders or analytics) execute immediately. WRITE actions (like drafting a product listing) create drafts. HIGH RISK actions (like cancelling orders or deleting catalog items) require your explicit confirmation in an interactive modal.",
                 },
                 {
                   q: "How do store connections work?",
-                  a: "DropAI connects via official OAuth 2.0 PKCE with Shopify, WooCommerce, BigCommerce, and custom webhook endpoints. Your customer data is strictly isolated to your user tenancy.",
+                  a: "RAVAN SHIPPING connects via official OAuth 2.0 PKCE with Shopify, WooCommerce, BigCommerce, and custom webhook endpoints. Your customer data is strictly isolated to your user tenancy.",
                 },
                 {
                   q: "Can I test the platform before connecting my live store?",
-                  a: "Yes! DropAI features an integrated Demo Mode with rich sample products, orders, and supplier data so you can test every workflow before connecting real store credentials.",
+                  a: "Yes! RAVAN SHIPPING features an integrated Demo Mode with rich sample products, orders, and supplier data so you can test every workflow before connecting real store credentials.",
                 },
               ].map((faq, idx) => (
                 <div key={idx} className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">

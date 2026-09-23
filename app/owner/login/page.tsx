@@ -121,11 +121,18 @@ export default function OwnerLoginPage() {
 
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-orange-500 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20 mb-3">
-            <Shield className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+          <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-amber-500/40 p-1 flex items-center justify-center shadow-lg shadow-amber-500/20 mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="RAVAN SHIPPING"
+              className="w-full h-full object-contain"
+              width={56}
+              height={56}
+            />
           </div>
           <h1 className="text-xl font-extrabold text-white tracking-tight">
-            DropAI Owner Command Center
+            RAVAN SHIPPING Owner Command Center
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             Platform Owner &amp; Super Administrator Gateway

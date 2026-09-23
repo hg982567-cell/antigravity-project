@@ -67,7 +67,7 @@ export default function ContactPage() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold mb-3">
               <LifeBuoy className="w-3.5 h-3.5" />
-              <span>Official DropAI Customer Support Desk</span>
+              <span>Official RAVAN SHIPPING Customer Support Desk</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Customer Support &amp; Dispute Resolution
@@ -85,10 +85,10 @@ export default function ContactPage() {
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">Business Support Email</h2>
                 <p className="text-xs text-slate-500 mt-1">Direct inquiries routed to platform administrators.</p>
                 <a
-                  href="mailto:owner@dropai.com"
+                  href="mailto:owner@ravanshipping.com"
                   className="text-xs font-semibold text-blue-600 hover:underline mt-2 block font-mono"
                 >
-                  owner@dropai.com
+                  owner@ravanshipping.com
                 </a>
               </div>
 
@@ -141,7 +141,7 @@ export default function ContactPage() {
                   </h2>
                   <p className="text-xs text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
                     Your complaint has been registered in the database and dispatched directly to{" "}
-                    <strong className="text-slate-700 dark:text-slate-300">{ticketResult?.businessEmail || "owner@dropai.com"}</strong>.
+                    <strong className="text-slate-700 dark:text-slate-300">{ticketResult?.businessEmail || "owner@ravanshipping.com"}</strong>.
                     Our operations team will review your case and respond to your email shortly.
                   </p>
 

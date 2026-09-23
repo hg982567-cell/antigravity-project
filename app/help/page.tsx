@@ -127,7 +127,7 @@ export default function HelpCenterPage() {
               How can we help your store?
             </h1>
             <p className="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              Browse technical guides, integration tutorials, troubleshooting guides, and best practices for scaling with DropAI.
+              Browse technical guides, integration tutorials, troubleshooting guides, and best practices for scaling with RAVAN SHIPPING.
             </p>
 
             {/* Search Bar */}
@@ -171,7 +171,7 @@ export default function HelpCenterPage() {
               {/* Quick Filter Tags */}
               <div className="mt-3 flex items-center justify-center flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span className="font-semibold text-slate-400">Quick searches:</span>
-                {["Shopify OAuth", "DropAI Brain", "USPS Tracking", "Fraud Holds", "2FA Setup", "REST API"].map((tag) => (
+                {["Shopify OAuth", "AI Brain", "USPS Tracking", "Fraud Holds", "2FA Setup", "REST API"].map((tag) => (
                   <button
                     key={tag}
                     type="button"

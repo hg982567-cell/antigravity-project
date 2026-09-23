@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Support ticket creation error:", error);
     return NextResponse.json(
-      { error: "Failed to submit support ticket. Please try again or email support@dropai.io directly." },
+      { error: "Failed to submit support ticket. Please try again or email support@ravanshipping.com directly." },
       { status: 500 }
     );
   }

@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS: Record<string, { value: string; category: string; descri
     description: "Owner beneficiary bank name for direct wire transfers",
   },
   OWNER_BANK_ACCOUNT_NAME: {
-    value: "DropAI Technologies Commercial",
+    value: "RAVAN SHIPPING Commercial Payouts",
     category: "PAYMENTS",
     description: "Account holder name for wire payments",
   },
@@ -43,7 +43,7 @@ const DEFAULT_SETTINGS: Record<string, { value: string; category: string; descri
     description: "Business UPI ID for GPay, PhonePe, Paytm, and BHIM payments",
   },
   OWNER_UPI_NAME: {
-    value: "DropAI Commercial Payouts",
+    value: "RAVAN SHIPPING Commercial Payouts",
     category: "PAYMENTS",
     description: "Merchant display name shown during UPI checkout",
   },

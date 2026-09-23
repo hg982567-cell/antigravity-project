@@ -127,7 +127,7 @@ export default function ProductsPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `dropai_catalog_${Date.now()}.csv`;
+    a.download = `ravan_shipping_catalog_${Date.now()}.csv`;
     a.click();
   };
 
@@ -334,7 +334,7 @@ export default function ProductsPage() {
                   type="text"
                   value={newSku}
                   onChange={(e) => setNewSku(e.target.value)}
-                  placeholder="DROPAI-FR-007"
+                  placeholder="RS-FR-007"
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>

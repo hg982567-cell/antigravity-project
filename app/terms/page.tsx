@@ -21,21 +21,21 @@ export default function TermsPage() {
             <section>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">1. Acceptance of Terms</h2>
               <p>
-                By registering for or using DropAI, you agree to comply with these terms, our acceptable use guidelines, and all applicable international trade and advertising laws.
+                By registering for or using RAVAN SHIPPING, you agree to comply with these terms, our acceptable use guidelines, and all applicable international trade and advertising laws.
               </p>
             </section>
 
             <section>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">2. Realistic Disclaimers & Merchant Responsibility</h2>
               <p>
-                DropAI provides software automation and market intelligence. We make no guarantees regarding business profitability, sales volume, or ad performance. You remain exclusively responsible for compliance with regional consumer protection laws, product warranties, and truthful advertising on Meta, Google, and TikTok.
+                RAVAN SHIPPING provides software automation and market intelligence. We make no guarantees regarding business profitability, sales volume, or ad performance. You remain exclusively responsible for compliance with regional consumer protection laws, product warranties, and truthful advertising on Meta, Google, and TikTok.
               </p>
             </section>
 
             <section>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">3. Prohibited Uses</h2>
               <p>
-                You may not utilize DropAI to sell counterfeit goods, illicit substances, weapons, or misleading health products, or attempt to reverse-engineer our proprietary scoring models and automated webhook handlers.
+                You may not utilize RAVAN SHIPPING to sell counterfeit goods, illicit substances, weapons, or misleading health products, or attempt to reverse-engineer our proprietary scoring models and automated webhook handlers.
               </p>
             </section>
 

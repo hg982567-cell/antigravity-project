@@ -5,8 +5,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "DropAI — Owner Super Admin Command Center",
-  description: "Restricted Access: DropAI Platform Owner Control Center",
+  title: "RAVAN SHIPPING — Owner Super Admin Command Center",
+  description: "Restricted Access: RAVAN SHIPPING Platform Owner Control Center",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function OwnerRootLayout({ children }: { children: React.ReactNode }) {

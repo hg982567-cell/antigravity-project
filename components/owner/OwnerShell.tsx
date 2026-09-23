@@ -127,10 +127,10 @@ export function OwnerShell({ children }: OwnerShellProps) {
             <Link
               href="/app/dashboard"
               className="px-2.5 py-1 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/60 text-blue-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
-              title="Launch DropAI Merchant Platform"
+              title="Launch RAVAN SHIPPING Merchant Platform"
             >
               <Store className="w-3.5 h-3.5 text-blue-400" />
-              <span className="hidden sm:inline">DropAI App</span>
+              <span className="hidden sm:inline">RAVAN SHIPPING App</span>
             </Link>
 
             <Link
@@ -150,11 +150,12 @@ export function OwnerShell({ children }: OwnerShellProps) {
             </Link>
 
             <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-              <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-xs">
-                OW
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-900 border border-amber-500/40 flex items-center justify-center p-0.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="Owner" className="w-full h-full object-contain" />
               </div>
               <div className="hidden xl:block text-left">
-                <p className="text-xs font-bold text-slate-200 leading-none">DropAI Owner</p>
+                <p className="text-xs font-bold text-slate-200 leading-none">RAVAN SHIPPING Owner</p>
                 <p className="text-[10px] font-mono text-amber-400 mt-0.5">ROLE: SUPER_ADMIN</p>
               </div>
             </div>

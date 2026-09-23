@@ -21,7 +21,7 @@ export default function CookiesPage() {
             <section>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">1. Essential Authentication Cookies</h2>
               <p>
-                DropAI utilizes secure, HttpOnly, SameSite cookies (`dropai_session_token`) strictly required for authenticating your user session, preventing cross-site request forgery (CSRF), and securing multi-factor authentication states. These cannot be disabled.
+                RAVAN SHIPPING utilizes secure, HttpOnly, SameSite cookies (`dropai_session_token`) strictly required for authenticating your user session, preventing cross-site request forgery (CSRF), and securing multi-factor authentication states. These cannot be disabled.
               </p>
             </section>
 
@@ -35,7 +35,7 @@ export default function CookiesPage() {
             <section>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">3. Zero Third-Party Tracking Cookies</h2>
               <p>
-                DropAI does not sell your browsing behavior or use intrusive cross-site ad retargeting cookies within your merchant dashboard.
+                RAVAN SHIPPING does not sell your browsing behavior or use intrusive cross-site ad retargeting cookies within your merchant dashboard.
               </p>
             </section>
           </div>

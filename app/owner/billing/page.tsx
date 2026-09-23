@@ -117,7 +117,7 @@ export default function OwnerBillingPayoutsPage() {
 
   const isLive = formData["PAYMENT_GATEWAY_MODE"] === "LIVE";
   const upiId = formData["OWNER_UPI_ID"] || "owner@okhdfcbank";
-  const upiName = formData["OWNER_UPI_NAME"] || "DropAI Commercial Payouts";
+  const upiName = formData["OWNER_UPI_NAME"] || "RAVAN SHIPPING Commercial Payouts";
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&cu=INR`
   )}`;
@@ -279,7 +279,7 @@ export default function OwnerBillingPayoutsPage() {
                 type="text"
                 value={formData["OWNER_BANK_ACCOUNT_NAME"] || ""}
                 onChange={(e) => handleInputChange("OWNER_BANK_ACCOUNT_NAME", e.target.value)}
-                placeholder="e.g. DropAI Technologies Commercial or Your Name"
+                placeholder="e.g. RAVAN SHIPPING Commercial or Your Name"
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
               />
             </div>
@@ -401,7 +401,7 @@ export default function OwnerBillingPayoutsPage() {
                   type="text"
                   value={formData["OWNER_UPI_NAME"] || ""}
                   onChange={(e) => handleInputChange("OWNER_UPI_NAME", e.target.value)}
-                  placeholder="e.g. DropAI Commercial Payouts"
+                  placeholder="e.g. RAVAN SHIPPING Commercial Payouts"
                   className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
                 />
               </div>
@@ -659,7 +659,7 @@ export default function OwnerBillingPayoutsPage() {
                 type="email"
                 value={formData["BUSINESS_SUPPORT_EMAIL"] || ""}
                 onChange={(e) => handleInputChange("BUSINESS_SUPPORT_EMAIL", e.target.value)}
-                placeholder="e.g. owner@dropai.com or support@yourcompany.com"
+                placeholder="e.g. owner@ravanshipping.com or support@yourcompany.com"
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
               />
             </div>

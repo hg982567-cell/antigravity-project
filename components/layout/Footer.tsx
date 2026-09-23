@@ -10,10 +10,13 @@ export function Footer() {
           {/* Brand Info */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-                <Sparkles className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-900 border border-blue-500/30 flex items-center justify-center p-0.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="RAVAN SHIPPING" className="w-full h-full object-contain" />
               </div>
-              <span className="font-bold text-lg text-slate-900 dark:text-white">DropAI</span>
+              <span className="font-extrabold text-lg text-slate-900 dark:text-white uppercase">
+                RAVAN <span className="text-blue-500">SHIPPING</span>
+              </span>
             </Link>
             <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
               Enterprise dropshipping automation and intelligence platform. Built with real integrations, verified suppliers, strict data security, and zero hallucinated revenue.
@@ -119,7 +122,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} DropAI Inc. All rights reserved. DropAI does not make speculative profit guarantees.</p>
+          <p>© {new Date().getFullYear()} RAVAN SHIPPING Inc. All rights reserved. RAVAN SHIPPING does not make speculative profit guarantees.</p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>All systems operational</span>

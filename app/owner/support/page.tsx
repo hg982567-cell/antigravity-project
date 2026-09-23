@@ -97,7 +97,7 @@ export default function OwnerSupportPage() {
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Direct inbox for all customer inquiries and complaints routed to <code className="text-amber-400 font-mono">owner@dropai.com</code>.
+              Direct inbox for all customer inquiries and complaints routed to <code className="text-amber-400 font-mono">owner@ravanshipping.com</code>.
             </p>
           </div>
 

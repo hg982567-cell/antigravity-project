@@ -284,7 +284,7 @@ export default function StoresPage() {
 
             <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 text-[11px] text-blue-800 dark:text-blue-300">
               <ShieldCheck className="w-4 h-4 inline mr-1 text-blue-600" />
-              DropAI uses encrypted OAuth scopes. We never request full admin ownership or customer payment credentials.
+              RAVAN SHIPPING uses encrypted OAuth scopes. We never request full admin ownership or customer payment credentials.
             </div>
 
             <div className="pt-2 flex items-center justify-end gap-3">

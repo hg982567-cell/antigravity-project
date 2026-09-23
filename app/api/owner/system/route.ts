@@ -70,7 +70,7 @@ export async function GET() {
         data: [
           {
             key: "platform_name",
-            value: "DropAI Master Enterprise",
+            value: "RAVAN SHIPPING Master Enterprise",
             category: "GENERAL",
             description: "Global platform brand identifier",
           },

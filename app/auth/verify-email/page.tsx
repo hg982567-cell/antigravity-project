@@ -18,6 +18,7 @@ import {
   sendVerificationEmail,
   signOutFromFirebase,
 } from "@/lib/firebase/client";
+import { BrandLogo } from "@/components/common/BrandLogo";
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -220,14 +221,9 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
-        <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
-            DropAI
-          </span>
-        </Link>
+        <div className="flex justify-center">
+          <BrandLogo size="md" href="/" />
+        </div>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">

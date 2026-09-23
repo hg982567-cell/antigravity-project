@@ -149,7 +149,7 @@ export async function POST(req: Request) {
       });
       if (maintenanceSetting?.value === "true" && !hasAdminClaim) {
         return NextResponse.json(
-          { error: "DropAI is currently in Maintenance Mode for scheduled infrastructure optimization." },
+          { error: "RAVAN SHIPPING is currently in Maintenance Mode for scheduled infrastructure optimization." },
           { status: 503 }
         );
       }

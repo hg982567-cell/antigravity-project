@@ -291,7 +291,7 @@ export default function AiAssistantPage() {
           >
             <input
               type="text"
-              placeholder="Ask DropAI: 'Show today's sales' or 'Cancel order #ORD-1042'..."
+              placeholder="Ask RAVAN SHIPPING: 'Show today's sales' or 'Cancel order #ORD-1042'..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="flex-1 px-4 py-2.5 text-xs rounded-xl bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"

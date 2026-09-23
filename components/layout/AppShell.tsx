@@ -86,7 +86,7 @@ export function AppShell({
               Access Restricted by Platform Administrator
             </p>
             <p className="text-xs text-slate-400 mt-4 leading-relaxed bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-left">
-              <strong>Reason:</strong> {currentUser.suspendedReason || "Account policy review in progress. Please contact DropAI operations support."}
+              <strong>Reason:</strong> {currentUser.suspendedReason || "Account policy review in progress. Please contact RAVAN SHIPPING operations support."}
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800 flex flex-col gap-2.5">
@@ -176,7 +176,7 @@ export function AppShell({
             <div className="flex items-center gap-2 max-w-4xl truncate">
               <AlertOctagon className="w-4 h-4 shrink-0 animate-pulse text-amber-200" />
               <span>
-                PLATFORM EMERGENCY NOTICE: DropAI is in read-only administrative lockdown ({lockdownReason || "Security Review"}).
+                PLATFORM EMERGENCY NOTICE: RAVAN SHIPPING is in read-only administrative lockdown ({lockdownReason || "Security Review"}).
               </span>
             </div>
             {isOwner && (

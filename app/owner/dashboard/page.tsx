@@ -124,10 +124,10 @@ export default function OwnerDashboardPage() {
           <Link
             href="/app/dashboard"
             className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-blue-500/20"
-            title="Switch to DropAI Merchant Platform"
+            title="Switch to RAVAN SHIPPING Merchant Platform"
           >
             <Store className="w-3.5 h-3.5" />
-            <span>Launch DropAI App</span>
+            <span>Launch RAVAN SHIPPING</span>
           </Link>
           <button
             onClick={handleManualRefresh}
@@ -283,16 +283,16 @@ export default function OwnerDashboardPage() {
         </div>
       </div>
 
-      {/* DropAI Connected Stores & Merchant Infrastructure Section */}
+      {/* RAVAN SHIPPING Connected Stores & Merchant Infrastructure Section */}
       <div id="stores" className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-xs font-bold text-slate-200 font-mono uppercase flex items-center gap-2">
               <Store className="w-4 h-4 text-blue-400" />
-              DropAI Multi-Tenant Stores & Live Merchant Pipeline
+              RAVAN SHIPPING Multi-Tenant Stores & Live Merchant Pipeline
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Live ecommerce storefronts and dropshipping catalogs managed across the DropAI platform.
+              Live ecommerce storefronts and dropshipping catalogs managed across the RAVAN SHIPPING platform.
             </p>
           </div>
 
@@ -302,7 +302,7 @@ export default function OwnerDashboardPage() {
               target="_blank"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:text-blue-300 text-xs font-bold transition-all"
             >
-              <span>View in DropAI</span>
+              <span>View in RAVAN SHIPPING</span>
               <ExternalLink className="w-3 h-3" />
             </Link>
             <Link

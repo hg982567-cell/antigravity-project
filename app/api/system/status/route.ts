@@ -26,7 +26,7 @@ export async function GET() {
     });
 
     const maintenanceMode = settingsMap["maintenance_mode"] === "true";
-    const platformName = settingsMap["platform_name"] || "DropAI Platform";
+    const platformName = settingsMap["platform_name"] || "RAVAN SHIPPING";
 
     return NextResponse.json({
       lockdownActive: !!lockdown,

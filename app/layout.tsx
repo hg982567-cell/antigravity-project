@@ -6,8 +6,29 @@ import { DemoProvider } from "@/components/providers/DemoContext";
 import { SystemProvider } from "@/components/providers/SystemContext";
 
 export const metadata: Metadata = {
-  title: "DropAI — Autonomous Dropshipping & Ecommerce Intelligence",
-  description: "Enterprise-grade AI platform for product research, verified supplier intelligence, store automation, and predictive marketing.",
+  title: {
+    default: "RAVAN SHIPPING — Autonomous Ecommerce, Dropshipping & Logistics Intelligence",
+    template: "%s | RAVAN SHIPPING",
+  },
+  description: "Enterprise-grade AI platform for product research, verified supplier intelligence, store automation, global logistics, and predictive marketing.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "RAVAN SHIPPING — Autonomous Ecommerce, Dropshipping & Logistics Intelligence",
+    description: "Enterprise-grade AI platform for product research, verified supplier intelligence, store automation, global logistics, and predictive marketing.",
+    siteName: "RAVAN SHIPPING",
+    images: [
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "RAVAN SHIPPING",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

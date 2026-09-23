@@ -12,13 +12,13 @@ export default function AboutPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-              About DropAI
+              About RAVAN SHIPPING
             </span>
             <h1 className="mt-2 text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Engineering truth and precision for modern ecommerce
             </h1>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-              We built DropAI because the dropshipping software landscape was flooded with hype, fake profit claims, and unreliable scraped data. We wanted a real operating system built with software engineering discipline.
+              We built RAVAN SHIPPING because the dropshipping software landscape was flooded with hype, fake profit claims, and unreliable scraped data. We wanted a real operating system built with software engineering discipline.
             </p>
           </div>
 
@@ -39,7 +39,7 @@ export default function AboutPage() {
               </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Controlled AI Execution</h2>
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                AI should never have unrestrained, blind access to delete databases or spend advertising budgets. Our Drop AI Brain enforces strict permission tiers (`READ`, `WRITE`, and interactive `HIGH RISK` verification modals).
+                AI should never have unrestrained, blind access to delete databases or spend advertising budgets. Our AI Brain enforces strict permission tiers (`READ`, `WRITE`, and interactive `HIGH RISK` verification modals).
               </p>
             </div>
           </div>

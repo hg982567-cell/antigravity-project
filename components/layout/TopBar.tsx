@@ -227,7 +227,7 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
           <Link
             href="/owner/login?redirect=/owner/dashboard"
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all shadow-sm"
-            title="DropAI Owner Super Admin Control Center (Requires Master Password)"
+            title="RAVAN SHIPPING Owner Super Admin Control Center (Requires Master Password)"
           >
             <Shield className="w-3.5 h-3.5 text-amber-500" />
             <span className="hidden sm:inline">Owner Admin</span>

@@ -165,7 +165,7 @@ export default function OwnerSubscriptionsPage() {
 
   const qrPreviewUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
     `upi://pay?pa=${payoutForm.OWNER_UPI_ID || "owner@okhdfcbank"}&pn=${encodeURIComponent(
-      payoutForm.OWNER_UPI_NAME || "DropAI Platform"
+      payoutForm.OWNER_UPI_NAME || "RAVAN SHIPPING Platform"
     )}&cu=INR`
   )}`;
 
@@ -260,7 +260,7 @@ export default function OwnerSubscriptionsPage() {
                     required
                     value={payoutForm.OWNER_UPI_NAME}
                     onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_UPI_NAME: e.target.value })}
-                    placeholder="e.g. DropAI Commercial or Your Real Name"
+                    placeholder="e.g. RAVAN SHIPPING Commercial or Your Real Name"
                     className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono"
                   />
                   <span className="text-[10px] text-slate-500 mt-0.5 block">
@@ -276,7 +276,7 @@ export default function OwnerSubscriptionsPage() {
                   </div>
                   <div className="text-xs space-y-0.5 font-mono">
                     <span className="text-[10px] uppercase text-emerald-400 font-bold block">Live Customer QR Preview</span>
-                    <p className="text-white font-bold text-xs truncate max-w-[180px]">{payoutForm.OWNER_UPI_NAME || "DropAI Platform"}</p>
+                    <p className="text-white font-bold text-xs truncate max-w-[180px]">{payoutForm.OWNER_UPI_NAME || "RAVAN SHIPPING Platform"}</p>
                     <p className="text-amber-400 text-[11px] truncate max-w-[180px]">{payoutForm.OWNER_UPI_ID || "owner@okhdfcbank"}</p>
                     <p className="text-[10px] text-slate-500">Auto-updates as you type your UPI ID</p>
                   </div>

@@ -6,7 +6,7 @@ import { getCurrentOwner } from "@/lib/auth/owner-session";
 export const dynamic = "force-dynamic";
 
 const CATEGORIES_CONFIG = [
-  { id: "getting-started", name: "Getting Started", icon: "Rocket", description: "Essential guides for launching, configuring, and connecting your DropAI store." },
+  { id: "getting-started", name: "Getting Started", icon: "Rocket", description: "Essential guides for launching, configuring, and connecting your RAVAN SHIPPING store." },
   { id: "product-research-ai", name: "Product Research & AI", icon: "Search", description: "Discover high-margin winning products, run AI market analysis, and generate high-converting ads." },
   { id: "shopify-integrations", name: "Shopify & Store Integrations", icon: "Store", description: "Connect official store bridges using OAuth PKCE, manage webhooks, and automate catalog sync." },
   { id: "automations-fulfillment", name: "Automations & Fulfillment", icon: "Zap", description: "Configure autonomous supplier fallback, carrier tracking sync, and fraud hold thresholds." },

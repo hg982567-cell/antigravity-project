@@ -48,7 +48,7 @@ export async function GET() {
           },
           {
             code: "PRO",
-            name: "DropAI Professional",
+            name: "RAVAN SHIPPING Professional",
             priceMonthly: 79,
             priceYearly: 759,
             productLimit: 500,
@@ -76,7 +76,7 @@ export async function GET() {
           },
           {
             code: "ENTERPRISE",
-            name: "DropAI Enterprise Dedicated",
+            name: "RAVAN SHIPPING Enterprise Dedicated",
             priceMonthly: 299,
             priceYearly: 2870,
             productLimit: 99999,
@@ -129,10 +129,10 @@ export async function GET() {
     }
     const payoutSettings = {
       OWNER_UPI_ID: settingsMap["OWNER_UPI_ID"] || "owner@okhdfcbank",
-      OWNER_UPI_NAME: settingsMap["OWNER_UPI_NAME"] || "DropAI Commercial Payouts",
+      OWNER_UPI_NAME: settingsMap["OWNER_UPI_NAME"] || "RAVAN SHIPPING Commercial Payouts",
       OWNER_PAYPAL_EMAIL: settingsMap["OWNER_PAYPAL_EMAIL"] || "",
       OWNER_BANK_NAME: settingsMap["OWNER_BANK_NAME"] || "HDFC Bank Ltd",
-      OWNER_BANK_ACCOUNT_NAME: settingsMap["OWNER_BANK_ACCOUNT_NAME"] || "DropAI Technologies Commercial",
+      OWNER_BANK_ACCOUNT_NAME: settingsMap["OWNER_BANK_ACCOUNT_NAME"] || "RAVAN SHIPPING Commercial Payouts",
       OWNER_BANK_ACCOUNT_NUMBER: settingsMap["OWNER_BANK_ACCOUNT_NUMBER"] || "50200084920194",
       OWNER_BANK_IFSC_SWIFT: settingsMap["OWNER_BANK_IFSC_SWIFT"] || "HDFC0001234",
       OWNER_BANK_BRANCH: settingsMap["OWNER_BANK_BRANCH"] || "Financial District, Mumbai",

@@ -113,16 +113,21 @@ export function Sidebar({
               isCollapsed && "justify-center w-full"
             )}
           >
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-sm shadow-blue-500/20">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 border border-blue-500/30 flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="RAVAN SHIPPING"
+                className="w-full h-full object-contain p-0.5"
+              />
             </div>
             {!isCollapsed && (
               <div className="flex flex-col">
-                <span className="font-bold text-base tracking-tight text-slate-900 dark:text-white">
-                  DropAI
+                <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white uppercase leading-none">
+                  RAVAN <span className="text-blue-500">SHIPPING</span>
                 </span>
-                <span className="text-[10px] font-medium text-slate-400 -mt-1">
-                  Enterprise OS
+                <span className="text-[10px] font-medium text-slate-400 mt-0.5">
+                  Logistics &amp; Commerce OS
                 </span>
               </div>
             )}

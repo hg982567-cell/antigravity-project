@@ -40,7 +40,7 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
       title: "COMMAND CENTER",
       items: [
         { label: "Overview", href: "/owner/dashboard", icon: Activity },
-        { label: "DropAI Stores & Pipeline", href: "/owner/dashboard#stores", icon: Store },
+        { label: "RAVAN Stores & Pipeline", href: "/owner/dashboard#stores", icon: Store },
         { label: "System Health", href: "/owner/dashboard#health", icon: Radio },
       ],
     },
@@ -120,12 +120,17 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
       {/* Top Brand Tag */}
       <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
         <Link href="/owner/dashboard" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-600 via-orange-500 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <Shield className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-900 border border-amber-500/40 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="RAVAN SHIPPING"
+              className="w-full h-full object-contain p-0.5"
+            />
           </div>
           <div>
-            <span className="font-black text-sm text-white tracking-wider font-mono">
-              DROP<span className="text-amber-400">AI</span>
+            <span className="font-black text-xs text-white tracking-wider font-mono uppercase block">
+              RAVAN <span className="text-amber-400">SHIPPING</span>
             </span>
             <span className="block text-[9px] font-bold text-amber-400/90 tracking-widest uppercase">
               OWNER CONTROL
@@ -134,7 +139,7 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
         </Link>
       </div>
 
-      {/* Direct Bridge to DropAI Merchant Platform */}
+      {/* Direct Bridge to RAVAN SHIPPING Merchant Platform */}
       <div className="p-2.5 border-b border-slate-800/60 bg-slate-900/40">
         <Link
           href="/app/dashboard"
@@ -142,7 +147,7 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
         >
           <span className="flex items-center gap-2">
             <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            DropAI Store Platform
+            RAVAN SHIPPING App
           </span>
           <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500 text-white font-mono">
             APP

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { KeyRound, Mail, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { sendFirebasePasswordReset } from "@/lib/firebase/client";
+import { BrandLogo } from "@/components/common/BrandLogo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -37,6 +38,11 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
+        <div className="flex justify-center">
+          <BrandLogo size="md" href="/" />
+        </div>
+      </div>
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white dark:bg-slate-900 py-8 px-6 shadow-xl border border-slate-200 dark:border-slate-800 rounded-2xl sm:px-10">
           <div className="text-center mb-6">

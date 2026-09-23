@@ -64,10 +64,10 @@ export async function POST(req: Request) {
       planName = planConfig?.name || "Merchant Starter";
       amount = billingCycle === "YEARLY" ? (planConfig?.priceYearly || 279.0) : (planConfig?.priceMonthly || 29.0);
     } else if (cleanPlan === "PRO") {
-      planName = planConfig?.name || "DropAI Professional";
+      planName = planConfig?.name || "RAVAN SHIPPING Professional";
       amount = billingCycle === "YEARLY" ? (planConfig?.priceYearly || 759.0) : (planConfig?.priceMonthly || 79.0);
     } else if (cleanPlan === "ENTERPRISE") {
-      planName = planConfig?.name || "DropAI Enterprise Dedicated";
+      planName = planConfig?.name || "RAVAN SHIPPING Enterprise Dedicated";
       amount = billingCycle === "YEARLY" ? (planConfig?.priceYearly || 2870.0) : (planConfig?.priceMonthly || 299.0);
     }
 
