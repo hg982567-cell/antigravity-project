@@ -200,17 +200,17 @@ export function Sidebar({
           ))}
         </div>
 
-        {/* Dedicated Owner Command Center Entry Point - ONLY VISIBLE TO PLATFORM OWNER */}
+        {/* Dedicated Owner Command Center Entry Point - ONLY VISIBLE TO PLATFORM OWNER (Requires Password) */}
         {isOwner && (
           <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
             <Link
-              href="/owner/dashboard"
+              href="/owner/login?redirect=/owner/dashboard"
               onClick={() => setMobileOpen(false)}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold text-xs transition-all group relative",
                 isCollapsed && "justify-center px-0 py-2.5"
               )}
-              title={isCollapsed ? "Owner Super Admin Control Center" : undefined}
+              title={isCollapsed ? "Owner Super Admin Control Center (Requires Master Password)" : undefined}
             >
               <Shield className="w-4 h-4 shrink-0 text-amber-500 stroke-[2.5]" />
               {!isCollapsed && (

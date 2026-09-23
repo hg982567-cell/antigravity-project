@@ -164,9 +164,6 @@ export default function ProductResearchPage() {
               <p className="text-slate-400 text-[11px] mt-0.5">The platform administrator has turned off automated neural product scoring. Showing cached catalog.</p>
             </div>
           </div>
-          <Link href="/owner/system" className="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[11px] font-bold shrink-0 ml-3">
-            Owner Controls →
-          </Link>
         </div>
       )}
 
@@ -175,16 +172,13 @@ export default function ProductResearchPage() {
         <div className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
             <Percent className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Owner Configured Profit Engine:</span>
+            <span>Platform Profit Engine:</span>
             <strong className="text-slate-900 dark:text-white">{activeProfitRule.productMarkup || 2.5}x Markup</strong>
             <span>•</span>
             <strong className="text-slate-900 dark:text-white">{activeProfitRule.minMarginPercent || 20}% Min Margin</strong>
             <span>•</span>
             <strong className="text-slate-900 dark:text-white">{activeProfitRule.platformFeePercent || 2.5}% Platform Fee</strong>
           </div>
-          <Link href="/owner/profit" className="text-[11px] font-mono text-blue-500 hover:underline">
-            Manage Profit Rules →
-          </Link>
         </div>
       )}
 

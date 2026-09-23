@@ -26,8 +26,9 @@ export async function GET() {
     const user = await getCurrentUser();
     const owner = await getCurrentOwner();
 
-    // If user is authenticated as a merchant, they are strictly NOT owner
-    const isOwner = user ? user.role === "OWNER" : Boolean(owner);
+    // isOwner is strictly true ONLY when a verified owner session cookie exists (authenticated with owner password)
+    const isOwner = Boolean(owner);
+    const isOwnerAccount = Boolean((user && (user.role === "OWNER" || user.role === "ADMIN")) || owner);
     const effectiveUser: any =
       user ||
       (owner
@@ -48,7 +49,7 @@ export async function GET() {
 
     if (!effectiveUser) {
       return NextResponse.json(
-        { authenticated: false, user: null, isOwner: false },
+        { authenticated: false, user: null, isOwner: false, isOwnerAccount: false },
         { status: 200 }
       );
     }
@@ -68,6 +69,7 @@ export async function GET() {
         suspendedReason: effectiveUser.suspendedReason || null,
       },
       isOwner,
+      isOwnerAccount,
     });
 
     // If merchant is logged in, proactively clear any lingering owner cookie
@@ -319,40 +321,18 @@ export async function POST(req: Request) {
       path: "/",
     });
 
-    // 9. If Admin/Owner, also establish dropai_owner_session_token
-    if (isOwner) {
-      try {
-        const ownerSess = await createOwnerDatabaseSession({
-          ownerId: user.id,
-          email: user.email,
-          ipAddress: ip,
-          userAgent,
-        });
-        response.cookies.set({
-          name: OWNER_COOKIE_NAME,
-          value: ownerSess.token,
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: OWNER_SESSION_MAX_AGE,
-          path: "/",
-        });
-      } catch (err) {
-        console.warn("Owner session creation error:", err);
-      }
-    } else {
-      // Proactively clear Owner session cookie for merchants
-      response.cookies.set({
-        name: OWNER_COOKIE_NAME,
-        value: "",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 0,
-        expires: new Date(0),
-        path: "/",
-      });
-    }
+    // 9. Owner session isolation: Normal merchant login NEVER generates owner session tokens.
+    // Platform Owner access strictly requires explicit password authentication via /owner/login.
+    response.cookies.set({
+      name: OWNER_COOKIE_NAME,
+      value: "",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0,
+      expires: new Date(0),
+      path: "/",
+    });
 
     // Log security event safely
     try {

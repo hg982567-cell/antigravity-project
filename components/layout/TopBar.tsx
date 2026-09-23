@@ -222,12 +222,12 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
           {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        {/* Owner Admin Quick Launch Button - Strictly visible ONLY to Platform Owner */}
+        {/* Owner Admin Quick Launch Button - Strictly visible ONLY to Platform Owner (Requires Password) */}
         {isOwner && (
           <Link
-            href="/owner/dashboard"
+            href="/owner/login?redirect=/owner/dashboard"
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all shadow-sm"
-            title="DropAI Owner Super Admin Control Center"
+            title="DropAI Owner Super Admin Control Center (Requires Master Password)"
           >
             <Shield className="w-3.5 h-3.5 text-amber-500" />
             <span className="hidden sm:inline">Owner Admin</span>
@@ -293,7 +293,7 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
               {isOwner && (
                 <div className="border-t border-slate-100 dark:border-slate-800 py-1 bg-amber-500/5">
                   <Link
-                    href="/owner/dashboard"
+                    href="/owner/login?redirect=/owner/dashboard"
                     onClick={() => setProfileDropdownOpen(false)}
                     className="flex items-center justify-between px-4 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
                   >

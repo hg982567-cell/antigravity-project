@@ -181,9 +181,6 @@ export default function CreativeStudioPage() {
               <p className="text-slate-400 text-[11px] mt-0.5">Automated copy generation is turned off in Owner System Settings. Pre-generated samples remain available.</p>
             </div>
           </div>
-          <Link href="/owner/system" className="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[11px] font-bold shrink-0 ml-3">
-            Owner Controls →
-          </Link>
         </div>
       )}
 

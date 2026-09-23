@@ -38,7 +38,6 @@ const CATEGORY_ICONS: Record<string, any> = {
   "security-account": Shield,
   troubleshooting: HelpCircle,
   "developer-api": Code,
-  "admin-system": Lock,
 };
 
 export default function HelpCenterPage() {

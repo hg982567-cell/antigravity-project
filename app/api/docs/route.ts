@@ -15,7 +15,6 @@ const CATEGORIES_CONFIG = [
   { id: "security-account", name: "Security & Account", icon: "Shield", description: "Secure your account with TOTP 2FA, review active device sessions, and understand data isolation." },
   { id: "troubleshooting", name: "Troubleshooting Center", icon: "HelpCircle", description: "Step-by-step diagnostic workflows for Shopify connections, missing syncs, webhooks, and auth." },
   { id: "developer-api", name: "Developer & Technical API", icon: "Code", description: "Technical documentation covering REST APIs, webhook HMAC signatures, and multi-tenant design." },
-  { id: "admin-system", name: "Admin & System Operations", icon: "Lock", description: "Platform control center guides, user access management, universal AI models, and disaster recovery." },
 ];
 
 export async function GET(req: NextRequest) {
@@ -29,22 +28,19 @@ export async function GET(req: NextRequest) {
     // Determine authorization tier
     const user = await getCurrentUser().catch(() => null);
     const owner = await getCurrentOwner().catch(() => null);
-
-    const isOwner = Boolean(owner || user?.role === "OWNER");
     const isAuthenticated = Boolean(user || owner);
+    const isOwner = Boolean(owner);
 
-    // Permitted visibilities based on caller's authoritative role
-    let allowedVisibilities: string[] = ["PUBLIC"];
-    if (isOwner) {
-      allowedVisibilities = ["PUBLIC", "AUTHENTICATED", "ADMIN_ONLY"];
-    } else if (isAuthenticated) {
-      allowedVisibilities = ["PUBLIC", "AUTHENTICATED"];
-    }
+    // Permitted visibilities: strictly merchant & customer-facing guides
+    const allowedVisibilities: string[] = isAuthenticated
+      ? ["PUBLIC", "AUTHENTICATED"]
+      : ["PUBLIC"];
 
-    // Build Prisma query filter
+    // Build Prisma query filter - never show admin-system on public help center
     const whereClause: any = {
       status: "PUBLISHED",
       visibility: { in: allowedVisibilities },
+      category: { not: "admin-system" },
     };
 
     if (category) {
@@ -113,13 +109,11 @@ export async function GET(req: NextRequest) {
       categoryCounts[c.category] = c._count.id;
     });
 
-    const enrichedCategories = CATEGORIES_CONFIG
-      .filter((cat) => cat.id !== "admin-system" || isOwner)
-      .map((cat) => ({
-        ...cat,
-        articleCount: categoryCounts[cat.id] || 0,
-        accessible: cat.id === "admin-system" ? isOwner : (cat.id === "developer-api" ? isAuthenticated : true),
-      }));
+    const enrichedCategories = CATEGORIES_CONFIG.map((cat) => ({
+      ...cat,
+      articleCount: categoryCounts[cat.id] || 0,
+      accessible: cat.id === "developer-api" ? isAuthenticated : true,
+    }));
 
     // Popular articles (featured or highest positive feedback, strictly customer-facing)
     const popularArticles = articles

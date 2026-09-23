@@ -81,9 +81,6 @@ export default function ShippingPage() {
             className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
           />
         </div>
-        <Link href="/owner/shipping" className="text-[11px] font-mono font-bold text-amber-500 hover:underline shrink-0">
-          Owner Shipping Rules →
-        </Link>
       </div>
 
       {/* Live Carrier Rates Configured by Owner */}

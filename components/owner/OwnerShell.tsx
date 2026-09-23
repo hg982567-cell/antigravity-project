@@ -35,11 +35,13 @@ export function OwnerShell({ children }: OwnerShellProps) {
         if (data.authenticated && data.isOwner) {
           setIsAuthorized(true);
         } else {
-          router.replace("/owner/login");
+          const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+          router.replace(`/owner/login?redirect=${redirect}`);
         }
       })
       .catch(() => {
-        router.replace("/owner/login");
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        router.replace(`/owner/login?redirect=${redirect}`);
       })
       .finally(() => setCheckingAuth(false));
   }, [router]);

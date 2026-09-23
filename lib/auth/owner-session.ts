@@ -128,14 +128,7 @@ export async function getCurrentOwner() {
       }
     }
 
-    if (!targetUserId && sessionToken) {
-      const sessionPayload = await verifySessionToken(sessionToken);
-      if (sessionPayload?.userId && sessionPayload.role === "OWNER") {
-        targetUserId = sessionPayload.userId;
-        targetSessionId = sessionPayload.sessionId;
-      }
-    }
-
+    // Do NOT fall back to merchant sessionToken. Owner access strictly requires dedicated owner authentication.
     if (!targetUserId) {
       return null;
     }

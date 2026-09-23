@@ -70,22 +70,19 @@ export default function LoginPage() {
         return;
       }
 
-      // Success: Determine target dashboard based on authoritative role
-      const isOwner = Boolean(data.isOwner || data.user?.role === "OWNER");
+      // Success: Standard merchant authentication always enters Merchant Control Center (/app/dashboard)
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
       const safeRedirect =
-        redirectUrl && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")
+        redirectUrl &&
+        redirectUrl.startsWith("/") &&
+        !redirectUrl.startsWith("//") &&
+        !redirectUrl.startsWith("/owner") &&
+        !redirectUrl.startsWith("/admin")
           ? redirectUrl
           : null;
 
-      if (safeRedirect && (!safeRedirect.startsWith("/owner") || isOwner)) {
-        window.location.href = safeRedirect;
-      } else if (isOwner) {
-        window.location.href = "/owner/dashboard";
-      } else {
-        window.location.href = "/app/dashboard";
-      }
+      window.location.href = safeRedirect || "/app/dashboard";
     } catch (err: any) {
       console.error("Login attempt failed:", err);
       if (err.code === "auth/too-many-requests") {
@@ -132,15 +129,15 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
       const safeRedirect =
-        redirectUrl && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")
+        redirectUrl &&
+        redirectUrl.startsWith("/") &&
+        !redirectUrl.startsWith("//") &&
+        !redirectUrl.startsWith("/owner") &&
+        !redirectUrl.startsWith("/admin")
           ? redirectUrl
           : null;
 
-      if (data.isOwner || data.user?.role === "OWNER") {
-        window.location.href = safeRedirect || "/owner/dashboard";
-      } else {
-        window.location.href = safeRedirect || "/app/dashboard";
-      }
+      window.location.href = safeRedirect || "/app/dashboard";
     } catch (err: any) {
       console.error("Google sign in error:", err);
       const friendlyError = formatFirebaseAuthError(err);

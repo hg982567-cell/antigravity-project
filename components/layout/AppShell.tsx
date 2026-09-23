@@ -181,7 +181,7 @@ export function AppShell({
             </div>
             {isOwner && (
               <Link
-                href="/owner/system"
+                href="/owner/login?redirect=/owner/system"
                 className="text-[11px] font-mono underline hover:text-amber-200 shrink-0 ml-3"
               >
                 Owner Console →

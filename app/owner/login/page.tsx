@@ -48,8 +48,14 @@ export default function OwnerLoginPage() {
         throw new Error(data.error || "Authentication failed. Please verify owner credentials.");
       }
 
-      // Success: redirect to Owner Command Center
-      window.location.href = "/owner/dashboard";
+      // Success: redirect to requested Owner console route or dashboard
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirect");
+      const safeRedirect =
+        redirectUrl && redirectUrl.startsWith("/owner") && !redirectUrl.startsWith("//")
+          ? redirectUrl
+          : "/owner/dashboard";
+      window.location.href = safeRedirect;
     } catch (err: any) {
       setError(err.message || "Authentication rejected.");
       setLoading(false);
@@ -84,7 +90,13 @@ export default function OwnerLoginPage() {
         throw new Error(data.error || "Google account does not possess Platform Owner privileges.");
       }
 
-      window.location.href = "/owner/dashboard";
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirect");
+      const safeRedirect =
+        redirectUrl && redirectUrl.startsWith("/owner") && !redirectUrl.startsWith("//")
+          ? redirectUrl
+          : "/owner/dashboard";
+      window.location.href = safeRedirect;
     } catch (err: any) {
       console.error("Owner Google login error:", err);
       const friendlyError = formatFirebaseAuthError(err);

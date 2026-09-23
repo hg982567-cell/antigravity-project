@@ -39,9 +39,9 @@ export async function middleware(request: NextRequest) {
   ]);
 
   const isAuthenticated = Boolean(sessionPayload || ownerPayload);
+  // Strict Owner Isolation: Only dedicated owner session token (issued after password authentication) grants Owner access
   const hasOwnerRole = Boolean(
-    (ownerPayload && (ownerPayload.role === "OWNER" || ownerPayload.role === "ADMIN")) ||
-    (sessionPayload && (sessionPayload.role === "OWNER" || sessionPayload.role === "ADMIN"))
+    ownerPayload && (ownerPayload.role === "OWNER" || ownerPayload.role === "ADMIN")
   );
 
   // 0. Protected Canonical Route Aliases
