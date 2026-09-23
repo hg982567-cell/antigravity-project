@@ -47,7 +47,7 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
       .then((data) => {
         if (data.authenticated && data.user) {
           setCurrentUser(data.user);
-          setIsOwner(data.isOwner || data.user.role === "OWNER");
+          setIsOwner(Boolean(data.isOwner || data.isOwnerAccount || data.user?.role === "OWNER" || data.user?.role === "ADMIN"));
         }
       })
       .catch(() => null);

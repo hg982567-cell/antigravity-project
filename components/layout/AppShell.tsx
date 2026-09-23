@@ -31,7 +31,7 @@ export function AppShell({
       .then((data) => {
         if (data.authenticated && data.user) {
           setCurrentUser(data.user);
-          const ownerState = Boolean(data.isOwner || data.user.role === "OWNER");
+          const ownerState = Boolean(data.isOwner || data.isOwnerAccount || data.user?.role === "OWNER" || data.user?.role === "ADMIN");
           setIsOwner(ownerState);
 
           // Enforce Email Verification: Unverified merchants cannot access dashboard
