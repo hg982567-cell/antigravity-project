@@ -130,6 +130,7 @@ export async function GET() {
     const payoutSettings = {
       OWNER_UPI_ID: settingsMap["OWNER_UPI_ID"] || "owner@okhdfcbank",
       OWNER_UPI_NAME: settingsMap["OWNER_UPI_NAME"] || "DropAI Commercial Payouts",
+      OWNER_PAYPAL_EMAIL: settingsMap["OWNER_PAYPAL_EMAIL"] || "",
       OWNER_BANK_NAME: settingsMap["OWNER_BANK_NAME"] || "HDFC Bank Ltd",
       OWNER_BANK_ACCOUNT_NAME: settingsMap["OWNER_BANK_ACCOUNT_NAME"] || "DropAI Technologies Commercial",
       OWNER_BANK_ACCOUNT_NUMBER: settingsMap["OWNER_BANK_ACCOUNT_NUMBER"] || "50200084920194",

@@ -32,6 +32,7 @@ export async function GET() {
       stripePublishableKey: settingsMap["STRIPE_PUBLISHABLE_KEY"] || "",
       razorpayKeyId: settingsMap["RAZORPAY_KEY_ID"] || "",
       paypalClientId: settingsMap["PAYPAL_CLIENT_ID"] || "",
+      paypalEmail: settingsMap["OWNER_PAYPAL_EMAIL"] || settingsMap["BUSINESS_SUPPORT_EMAIL"] || "billing@dropai.io",
       businessSupportEmail: settingsMap["BUSINESS_SUPPORT_EMAIL"] || "owner@dropai.com",
     });
   } catch (err: any) {

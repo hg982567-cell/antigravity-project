@@ -37,6 +37,7 @@ export default function OwnerSubscriptionsPage() {
   const [payoutForm, setPayoutForm] = useState({
     OWNER_UPI_ID: "",
     OWNER_UPI_NAME: "",
+    OWNER_PAYPAL_EMAIL: "",
     OWNER_BANK_NAME: "",
     OWNER_BANK_ACCOUNT_NAME: "",
     OWNER_BANK_ACCOUNT_NUMBER: "",
@@ -279,6 +280,22 @@ export default function OwnerSubscriptionsPage() {
                     <p className="text-amber-400 text-[11px] truncate max-w-[180px]">{payoutForm.OWNER_UPI_ID || "owner@okhdfcbank"}</p>
                     <p className="text-[10px] text-slate-500">Auto-updates as you type your UPI ID</p>
                   </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800">
+                  <label className="text-[11px] font-mono text-slate-300 block mb-1">
+                    International PayPal Account / Email (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={payoutForm.OWNER_PAYPAL_EMAIL}
+                    onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_PAYPAL_EMAIL: e.target.value })}
+                    placeholder="e.g. yourname@gmail.com or paypal.me/yourusername"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-400 font-mono"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">
+                    Displayed to international customers when they select the PayPal payment option.
+                  </span>
                 </div>
               </div>
             </div>
