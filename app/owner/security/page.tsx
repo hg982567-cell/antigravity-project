@@ -76,11 +76,16 @@ export default function OwnerSecurityPage() {
 
   // Trigger ReAuth for rotating keys or revoking all sessions
   const requestRotateKey = (integration: any) => {
+    const newKey = prompt(
+      `Enter new real API/Secret key for ${integration.displayName} (or leave empty to generate rotation token):`
+    );
+    if (newKey === null) return;
     setReAuthAction({
       type: "rotate_api_key",
       integrationId: integration.id,
+      newApiKey: newKey,
       title: `Rotate Secret Key: ${integration.displayName}`,
-      description: "Rotating this integration secret requires explicit Owner password + MFA re-authentication.",
+      description: "Updating this integration secret requires explicit Owner password + MFA re-authentication.",
     });
     setReAuthOpen(true);
   };
@@ -104,6 +109,7 @@ export default function OwnerSecurityPage() {
         body: JSON.stringify({
           action: reAuthAction.type,
           integrationId: reAuthAction.integrationId,
+          newApiKey: reAuthAction.newApiKey,
           password,
           mfaCode,
         }),

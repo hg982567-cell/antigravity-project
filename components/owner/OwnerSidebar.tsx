@@ -25,6 +25,7 @@ import {
   Store,
   BookOpen,
   LifeBuoy,
+  Wallet,
 } from "lucide-react";
 
 interface OwnerSidebarProps {
@@ -65,9 +66,10 @@ export function OwnerSidebar({ onCloseMobile }: OwnerSidebarProps) {
       ],
     },
     {
-      title: "SUBSCRIPTIONS",
+      title: "COMMERCIAL & PAYMENTS",
       items: [
-        { label: "Plans & Pricing", href: "/owner/subscriptions", icon: CreditCard },
+        { label: "Payment & Payout Accounts", href: "/owner/billing", icon: Wallet },
+        { label: "Subscription Plans", href: "/owner/subscriptions", icon: CreditCard },
       ],
     },
     {

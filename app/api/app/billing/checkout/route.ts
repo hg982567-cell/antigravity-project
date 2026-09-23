@@ -50,15 +50,25 @@ export async function POST(req: Request) {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const invoiceNumber = `INV-${currentYear}-${randomSuffix}`;
 
+    // Read payment gateway mode from database settings
+    let isLiveMode = false;
+    try {
+      const modeSetting = await prisma.systemSetting.findUnique({
+        where: { key: "PAYMENT_GATEWAY_MODE" },
+      });
+      isLiveMode = modeSetting?.value === "LIVE";
+    } catch {}
+
+    const modePrefix = isLiveMode ? "live" : "test";
     let paymentReference = "";
     if (cleanMethod === "STRIPE_CARD") {
-      paymentReference = `pi_stripe_${Math.random().toString(36).substring(2, 14)}`;
+      paymentReference = `pi_stripe_${modePrefix}_${Math.random().toString(36).substring(2, 14)}`;
     } else if (cleanMethod === "RAZORPAY_UPI") {
-      paymentReference = `pay_rzp_${Math.random().toString(36).substring(2, 14)}`;
+      paymentReference = `pay_rzp_${modePrefix}_${Math.random().toString(36).substring(2, 14)}`;
     } else if (cleanMethod === "PAYPAL") {
-      paymentReference = `pp_tx_${Math.random().toString(36).substring(2, 14)}`;
+      paymentReference = `pp_${modePrefix}_${Math.random().toString(36).substring(2, 14)}`;
     } else {
-      paymentReference = `wire_ref_${Math.random().toString(36).substring(2, 14)}`;
+      paymentReference = `wire_${modePrefix}_${Math.random().toString(36).substring(2, 14)}`;
     }
 
     // Create official Invoice record in PostgreSQL

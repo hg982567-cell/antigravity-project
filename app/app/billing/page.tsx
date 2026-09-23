@@ -43,12 +43,20 @@ export default function BillingPage() {
 
   // Selected Invoice Modal for viewing receipt
   const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
+  const [gatewayConfig, setGatewayConfig] = useState<any>(null);
 
   const fetchBilling = async () => {
     try {
-      const res = await fetch("/api/app/data?type=billing");
+      const [res, configRes] = await Promise.all([
+        fetch("/api/app/data?type=billing"),
+        fetch("/api/app/billing/config").catch(() => null),
+      ]);
       const data = await res.json();
       setBillingData(data);
+      if (configRes && configRes.ok) {
+        const configData = await configRes.json();
+        setGatewayConfig(configData);
+      }
     } catch (err) {
       console.error("Billing fetch error:", err);
     } finally {
@@ -359,9 +367,20 @@ export default function BillingPage() {
               <div>
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      Complete Upgrade to {selectedPlan.name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Complete Upgrade to {selectedPlan.name}
+                      </h3>
+                      <span
+                        className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                          gatewayConfig?.gatewayMode === "LIVE"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                        }`}
+                      >
+                        {gatewayConfig?.gatewayMode === "LIVE" ? "LIVE PRODUCTION" : "TEST SANDBOX"}
+                      </span>
+                    </div>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Select your preferred payment gateway to activate tier features.
                     </p>
@@ -503,33 +522,69 @@ export default function BillingPage() {
                   )}
 
                   {paymentMethod === "RAZORPAY_UPI" && (
-                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
-                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                        Virtual Payment Address (UPI ID)
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={upiId}
-                        onChange={(e) => setUpiId(e.target.value)}
-                        placeholder="merchant@okhdfcbank or merchant@paytm"
-                        className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                      />
-                      <p className="text-[10px] text-slate-400">Instant approval via GooglePay, PhonePe, or BHIM.</p>
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                      <div className="flex flex-col sm:flex-row items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                            `upi://pay?pa=${gatewayConfig?.upiDetails?.upiId || "owner@okhdfcbank"}&pn=${encodeURIComponent(
+                              gatewayConfig?.upiDetails?.upiName || "DropAI Commercial"
+                            )}&cu=INR`
+                          )}`}
+                          alt="Merchant UPI QR Code"
+                          className="w-20 h-20 shrink-0 rounded-lg p-1 bg-white border border-slate-200"
+                        />
+                        <div className="text-xs space-y-0.5 text-center sm:text-left">
+                          <p className="font-bold text-slate-800 dark:text-white">
+                            Pay to: {gatewayConfig?.upiDetails?.upiName || "DropAI Commercial Payouts"}
+                          </p>
+                          <p className="font-mono text-amber-600 dark:text-amber-400 font-bold text-[11px]">
+                            {gatewayConfig?.upiDetails?.upiId || "owner@okhdfcbank"}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            Scan with GooglePay, PhonePe, Paytm, or enter your VPA below.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          Your UPI Virtual Payment Address (VPA)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={upiId}
+                          onChange={(e) => setUpiId(e.target.value)}
+                          placeholder="e.g. you@okhdfcbank or 9876543210@paytm"
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+                        />
+                      </div>
                     </div>
                   )}
 
                   {paymentMethod === "PAYPAL" && (
-                    <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-xs text-slate-600 dark:text-slate-300">
-                      You will be securely authenticated with your PayPal account to authorize the monthly recurring subscription.
+                    <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                      <p className="font-semibold text-blue-900 dark:text-blue-300">PayPal Express Checkout</p>
+                      <p>You will authorize the recurring merchant subscription securely via PayPal.</p>
                     </div>
                   )}
 
                   {paymentMethod === "BANK_WIRE" && (
-                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                      <p className="font-semibold text-slate-800 dark:text-white">Corporate Invoice &amp; ACH Routing:</p>
-                      <p className="text-slate-500 font-mono text-[11px]">Bank: Silicon Valley Bank / DropAI Inc.</p>
-                      <p className="text-slate-500 font-mono text-[11px]">Routing: 121000358 • Account: 4892019482</p>
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+                      <p className="font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-1">
+                        Official Beneficiary &amp; Wire Transfer Details:
+                      </p>
+                      <div className="font-mono text-[11px] space-y-0.5 text-slate-700 dark:text-slate-300">
+                        <p>Bank: <strong className="text-slate-900 dark:text-white">{gatewayConfig?.bankDetails?.bankName || "HDFC Bank Ltd"}</strong></p>
+                        <p>Beneficiary: <strong className="text-slate-900 dark:text-white">{gatewayConfig?.bankDetails?.accountName || "DropAI Technologies Commercial"}</strong></p>
+                        <p>Account #: <strong className="text-amber-600 dark:text-amber-400 font-bold">{gatewayConfig?.bankDetails?.accountNumber || "50200084920194"}</strong></p>
+                        <p>IFSC / SWIFT: <strong className="text-slate-900 dark:text-white">{gatewayConfig?.bankDetails?.ifscSwift || "HDFC0001234 / HDFCINBB"}</strong></p>
+                        <p>Branch: <span className="text-slate-500">{gatewayConfig?.bankDetails?.branch || "Financial District, Mumbai"}</span></p>
+                      </div>
+                      <p className="text-[10px] text-slate-400 pt-1">
+                        Reference your invoice number in the transfer description for instant automated reconciliation.
+                      </p>
                     </div>
                   )}
 
