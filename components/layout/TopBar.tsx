@@ -259,7 +259,7 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
                   {currentUser?.email || "demo@dropai.io"}
                 </p>
                 <span className={`inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${isOwner ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" : "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"}`}>
-                  {isOwner ? "SUPER ADMIN • OWNER" : `${currentUser?.subscription?.plan || "PRO"} Plan • ${currentUser?.subscription?.aiCreditsRemaining?.toLocaleString() || "4,820"} AI Credits`}
+                  {isOwner ? "SUPER ADMIN • OWNER" : `${currentUser?.subscription?.plan || "FREE"} Plan • ${currentUser?.subscription?.aiCreditsRemaining?.toLocaleString() || "100"} AI Credits`}
                 </span>
               </div>
 

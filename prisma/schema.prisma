@@ -376,13 +376,13 @@ model Subscription {
   id                  String    @id @default(cuid())
   userId              String    @unique
   user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan                String    @default("PRO") // FREE, STARTER, PRO, ENTERPRISE
+  plan                String    @default("FREE") // FREE, STARTER, PRO, ENTERPRISE
   status              String    @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED
   currentPeriodEnd    DateTime
-  aiCreditsRemaining  Int       @default(5000)
-  aiCreditsTotal      Int       @default(5000)
+  aiCreditsRemaining  Int       @default(100)
+  aiCreditsTotal      Int       @default(100)
   ordersProcessedThisMonth Int  @default(0)
-  storesLimit         Int       @default(5)
+  storesLimit         Int       @default(1)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }
@@ -642,7 +642,7 @@ model Invoice {
   amount           Float
   currency         String    @default("USD")
   paymentMethod    String    // STRIPE_CARD, RAZORPAY_UPI, PAYPAL, BANK_WIRE
-  paymentStatus    String    @default("PAID") // PAID, PENDING, FAILED
+  paymentStatus    String    @default("PENDING") // PENDING, PAID, REJECTED, FAILED
   paymentReference String?   // Transaction ID or Gateway reference
   billingPeriod    String?   // Monthly, Yearly
   pdfUrl           String?

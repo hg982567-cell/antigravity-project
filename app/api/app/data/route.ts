@@ -222,6 +222,22 @@ export async function GET(req: Request) {
       if (!plans || plans.length === 0) {
         plans = [
           {
+            id: "free",
+            code: "FREE",
+            name: "Free Tier",
+            priceMonthly: 0,
+            priceYearly: 0,
+            currency: "USD",
+            productLimit: 10,
+            storeLimit: 1,
+            orderLimit: 25,
+            aiCreditsLimit: 100,
+            automationLimit: 1,
+            apiAccess: false,
+            supportLevel: "COMMUNITY",
+            isActive: true,
+          },
+          {
             id: "starter",
             code: "STARTER",
             name: "Starter Plan",
@@ -270,6 +286,26 @@ export async function GET(req: Request) {
             isActive: true,
           },
         ];
+      } else {
+        // Ensure FREE plan is in plans list
+        if (!plans.some((p: any) => p.code === "FREE")) {
+          plans.unshift({
+            id: "free",
+            code: "FREE",
+            name: "Free Tier",
+            priceMonthly: 0,
+            priceYearly: 0,
+            currency: "USD",
+            productLimit: 10,
+            storeLimit: 1,
+            orderLimit: 25,
+            aiCreditsLimit: 100,
+            automationLimit: 1,
+            apiAccess: false,
+            supportLevel: "COMMUNITY",
+            isActive: true,
+          });
+        }
       }
 
       let invoices: any[] = [];
@@ -282,30 +318,13 @@ export async function GET(req: Request) {
         console.warn("Invoice query:", invErr);
       }
 
-      if (invoices.length === 0) {
-        invoices = [
-          {
-            id: "inv_initial",
-            invoiceNumber: "INV-2026-001",
-            planName: userRecord?.subscription?.plan === "STARTER" ? "Starter Plan" : "Growth Pro Plan",
-            amount: userRecord?.subscription?.plan === "STARTER" ? 29.0 : 79.0,
-            currency: "USD",
-            paymentMethod: "STRIPE_CARD",
-            paymentStatus: "PAID",
-            paymentReference: "pi_stripe_init_verified",
-            billingPeriod: "Monthly",
-            createdAt: userRecord?.subscription?.createdAt || new Date(),
-          },
-        ];
-      }
-
       return NextResponse.json({
-        plan: userRecord?.subscription?.plan || "PRO",
+        plan: userRecord?.subscription?.plan || "FREE",
         status: userRecord?.subscription?.status || "ACTIVE",
-        aiCreditsRemaining: userRecord?.subscription?.aiCreditsRemaining ?? 4820,
-        aiCreditsTotal: userRecord?.subscription?.aiCreditsTotal ?? 5000,
-        ordersProcessedCount: userRecord?.orders?.length || 142,
-        connectedStoresCount: userRecord?.stores?.length || 2,
+        aiCreditsRemaining: userRecord?.subscription?.aiCreditsRemaining ?? 100,
+        aiCreditsTotal: userRecord?.subscription?.aiCreditsTotal ?? 100,
+        ordersProcessedCount: userRecord?.orders?.length || 0,
+        connectedStoresCount: userRecord?.stores?.length || 0,
         plans,
         invoices,
       });
@@ -348,30 +367,35 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { action } = body;
-    // 0. Update User Subscription Plan
+    // 0. Update User Subscription Plan (Restricted: Paid tiers require verified checkout)
     if (action === "change_plan") {
       const { plan } = body;
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          subscription: {
-            upsert: {
-              create: {
-                plan: plan || "PRO",
-                status: "ACTIVE",
-                aiCreditsRemaining: 10000,
-                aiCreditsTotal: 10000,
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              },
-              update: {
-                plan: plan || "PRO",
-                status: "ACTIVE",
-              },
-            },
-          },
+      const targetPlan = String(plan || "FREE").toUpperCase();
+      if (targetPlan !== "FREE") {
+        return NextResponse.json(
+          { error: "Paid plans require payment verification. Please use the Billing checkout to submit your payment with UTR reference." },
+          { status: 400 }
+        );
+      }
+
+      await prisma.subscription.upsert({
+        where: { userId },
+        create: {
+          userId,
+          plan: "FREE",
+          status: "ACTIVE",
+          aiCreditsRemaining: 100,
+          aiCreditsTotal: 100,
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          storesLimit: 1,
+        },
+        update: {
+          plan: "FREE",
+          status: "ACTIVE",
+          storesLimit: 1,
         },
       });
-      return NextResponse.json({ success: true, plan });
+      return NextResponse.json({ success: true, plan: "FREE" });
     }
 
     // 1. Create Real Product

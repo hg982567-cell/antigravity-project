@@ -70,13 +70,13 @@ async function handleSeed(req: Request) {
       await prisma.subscription.create({
         data: {
           userId: user.id,
-          plan: "PRO",
+          plan: "FREE",
           status: "ACTIVE",
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          aiCreditsRemaining: 4850,
-          aiCreditsTotal: 5000,
-          ordersProcessedThisMonth: 142,
-          storesLimit: 5,
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          aiCreditsRemaining: 100,
+          aiCreditsTotal: 100,
+          ordersProcessedThisMonth: 0,
+          storesLimit: 1,
         },
       });
     }

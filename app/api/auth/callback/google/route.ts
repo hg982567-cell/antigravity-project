@@ -81,12 +81,12 @@ export async function GET(req: Request) {
             isEmailVerified: true,
             subscription: {
               create: {
-                plan: "PRO",
+                plan: "FREE",
                 status: "ACTIVE",
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                aiCreditsRemaining: 2500,
-                aiCreditsTotal: 2500,
-                storesLimit: 3,
+                currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                aiCreditsRemaining: 100,
+                aiCreditsTotal: 100,
+                storesLimit: 1,
               },
             },
           },

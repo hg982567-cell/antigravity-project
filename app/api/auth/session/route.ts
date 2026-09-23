@@ -202,16 +202,16 @@ export async function POST(req: Request) {
           },
         });
 
-        // Create default starter subscription for new merchant
+        // Create default Free Tier subscription for new merchant
         if (userRole === "MERCHANT") {
           await prisma.subscription.create({
             data: {
               userId: user.id,
-              plan: "STARTER",
+              plan: "FREE",
               status: "ACTIVE",
-              currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14-day trial
-              aiCreditsRemaining: 1000,
-              aiCreditsTotal: 1000,
+              currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Free forever
+              aiCreditsRemaining: 100,
+              aiCreditsTotal: 100,
               storesLimit: 1,
             },
           }).catch(() => null);

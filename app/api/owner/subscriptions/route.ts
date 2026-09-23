@@ -103,7 +103,23 @@ export async function GET() {
       userCountByPlan[s.plan] = (userCountByPlan[s.plan] || 0) + 1;
     });
 
-    return NextResponse.json({ plans, userCountByPlan });
+    // Query pending merchant payment confirmations
+    const pendingInvoices = await prisma.invoice.findMany({
+      where: { paymentStatus: "PENDING" },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ plans, userCountByPlan, pendingInvoices });
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED_OWNER") {
       return NextResponse.json({ error: "Unauthorized: Owner privilege required." }, { status: 403 });
@@ -117,10 +133,145 @@ export async function POST(req: Request) {
   try {
     const owner = await requireOwner();
     const body = await req.json();
-    const { action, planId, data } = body;
+    const { action, planId, data, invoiceId, reason } = body;
     const ip = getClientIp(req);
     const userAgent = req.headers.get("user-agent") || "Owner Console";
 
+    // 1. Approve Merchant Payment & Activate Subscription Plan
+    if (action === "approve_invoice") {
+      const invoice = await prisma.invoice.findUnique({
+        where: { id: invoiceId },
+        include: { user: true },
+      });
+
+      if (!invoice) {
+        return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
+      }
+
+      // Determine Plan parameters
+      const planConfig = await prisma.subscriptionPlan.findUnique({
+        where: { code: invoice.planCode },
+      }).catch(() => null);
+
+      let aiCredits = planConfig?.aiCreditsLimit || 10000;
+      let storesLimit = planConfig?.storeLimit || 5;
+
+      if (invoice.planCode === "STARTER") {
+        aiCredits = planConfig?.aiCreditsLimit || 2000;
+        storesLimit = planConfig?.storeLimit || 2;
+      } else if (invoice.planCode === "PRO") {
+        aiCredits = planConfig?.aiCreditsLimit || 10000;
+        storesLimit = planConfig?.storeLimit || 5;
+      } else if (invoice.planCode === "ENTERPRISE") {
+        aiCredits = planConfig?.aiCreditsLimit || 150000;
+        storesLimit = planConfig?.storeLimit || 99;
+      }
+
+      const periodEnd = new Date();
+      periodEnd.setDate(periodEnd.getDate() + (invoice.billingPeriod === "Yearly" ? 365 : 30));
+
+      // Mark Invoice as PAID
+      await prisma.invoice.update({
+        where: { id: invoiceId },
+        data: { paymentStatus: "PAID" },
+      });
+
+      // Activate User Subscription
+      const updatedSubscription = await prisma.subscription.upsert({
+        where: { userId: invoice.userId },
+        update: {
+          plan: invoice.planCode,
+          status: "ACTIVE",
+          currentPeriodEnd: periodEnd,
+          aiCreditsTotal: aiCredits,
+          aiCreditsRemaining: aiCredits,
+          storesLimit,
+        },
+        create: {
+          userId: invoice.userId,
+          plan: invoice.planCode,
+          status: "ACTIVE",
+          currentPeriodEnd: periodEnd,
+          aiCreditsTotal: aiCredits,
+          aiCreditsRemaining: aiCredits,
+          storesLimit,
+        },
+      });
+
+      // Send In-App Notification to Merchant
+      await prisma.notification.create({
+        data: {
+          userId: invoice.userId,
+          type: "SUCCESS",
+          title: `Payment Verified: ${invoice.planName} Activated!`,
+          message: `Your payment of $${invoice.amount} (${invoice.paymentMethod}) with reference "${invoice.paymentReference}" has been verified by the platform owner. Your subscription is now active!`,
+          link: "/app/billing",
+        },
+      }).catch(() => null);
+
+      // Log Owner Audit Event
+      await logOwnerAction({
+        ownerId: owner.id,
+        action: "PAYMENT_APPROVED",
+        targetType: "SUBSCRIPTION",
+        targetId: invoice.userId,
+        newValue: { invoiceId, plan: invoice.planCode, amount: invoice.amount },
+        severity: "INFO",
+        ipAddress: ip,
+        userAgent,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Payment confirmed! User ${invoice.user?.email} upgraded to ${invoice.planName}.`,
+        subscription: updatedSubscription,
+      });
+    }
+
+    // 2. Reject Merchant Payment
+    if (action === "reject_invoice") {
+      const invoice = await prisma.invoice.findUnique({
+        where: { id: invoiceId },
+        include: { user: true },
+      });
+
+      if (!invoice) {
+        return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
+      }
+
+      await prisma.invoice.update({
+        where: { id: invoiceId },
+        data: { paymentStatus: "REJECTED" },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: invoice.userId,
+          type: "ALERT",
+          title: `Payment Verification Declined: ${invoice.planName}`,
+          message: `Your payment reference "${invoice.paymentReference}" for invoice ${invoice.invoiceNumber} could not be verified. Reason: ${reason || "Payment not received in account / invalid UTR reference."}. Please contact support or retry.`,
+          link: "/app/billing",
+        },
+      }).catch(() => null);
+
+      await logOwnerAction({
+        ownerId: owner.id,
+        action: "PAYMENT_REJECTED",
+        targetType: "SUBSCRIPTION",
+        targetId: invoice.userId,
+        newValue: { invoiceId, reason },
+        severity: "WARNING",
+        ipAddress: ip,
+        userAgent,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Payment for invoice ${invoice.invoiceNumber} has been rejected.`,
+      });
+    }
+
+    // 3. Update Plan Configuration
     if (action === "update_plan") {
       const existing = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
       if (!existing) {
