@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { CurrencyProvider } from "@/components/providers/CurrencyContext";
 import { DemoProvider } from "@/components/providers/DemoContext";
 import { SystemProvider } from "@/components/providers/SystemContext";
+import { NotificationProvider } from "@/components/providers/NotificationContext";
 
 export const metadata: Metadata = {
   title: {
@@ -43,7 +44,9 @@ export default function RootLayout({
           <CurrencyProvider>
             <DemoProvider>
               <SystemProvider>
-                {children}
+                <NotificationProvider>
+                  {children}
+                </NotificationProvider>
               </SystemProvider>
             </DemoProvider>
           </CurrencyProvider>

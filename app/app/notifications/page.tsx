@@ -12,56 +12,33 @@ import {
   Sparkles,
   ArrowRight,
   Check,
+  BellRing,
+  Volume2,
+  VolumeX,
+  Volume2 as SoundIcon,
+  ShieldCheck,
+  Package,
+  CreditCard,
 } from "lucide-react";
+import { useNotifications } from "@/components/providers/NotificationContext";
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState("ALL");
-  const [notifications, setNotifications] = useState([
-    {
-      id: "n1",
-      type: "SUCCESS",
-      title: "Batch Fulfillment Successful",
-      message: "18 orders were successfully dispatched via CJ Dropshipping YunExpress line.",
-      link: "/app/orders",
-      time: "10 minutes ago",
-      isRead: false,
-    },
-    {
-      id: "n2",
-      type: "ALERT",
-      title: "TikTok Ad Scaling Opportunity",
-      message: "UGC Hook 3 for Pet Steam Brush reached a 3.42 ROAS. AI recommends a 20% budget boost.",
-      link: "/app/ads",
-      time: "1 hour ago",
-      isRead: false,
-    },
-    {
-      id: "n3",
-      type: "WARNING",
-      title: "Supplier Shipping Rate Adjustment",
-      message: "USPS regional rate updated for 400g parcels ($3.20 -> $3.50). Margins remain above 78%.",
-      link: "/app/suppliers",
-      time: "3 hours ago",
-      isRead: true,
-    },
-    {
-      id: "n4",
-      type: "INFO",
-      title: "Security Event Logged",
-      message: "Successful merchant session authenticated from Chrome / San Francisco.",
-      link: "/app/security",
-      time: "Yesterday",
-      isRead: true,
-    },
-  ]);
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
-  };
+  const {
+    permission,
+    soundEnabled,
+    notifications,
+    unreadCount,
+    requestPermission,
+    toggleSound,
+    triggerTestNotification,
+    markAllAsRead,
+    markAsRead,
+  } = useNotifications();
 
   const filtered = notifications.filter((n) => {
     if (filter === "UNREAD") return !n.isRead;
-    if (filter === "ALERTS") return n.type === "ALERT" || n.type === "WARNING";
+    if (filter === "ALERTS") return n.type === "ALERT" || n.type === "STOCK";
     return true;
   });
 
@@ -91,6 +68,82 @@ export default function NotificationsPage() {
         </button>
       </div>
 
+      {/* Push Notification & Audio Alert Controls Card */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+              <BellRing className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Real App Push Alerts &amp; Sound Chimes
+                </h2>
+                {permission === "granted" ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Push Active
+                  </span>
+                ) : permission === "denied" ? (
+                  <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 text-[10px] font-bold">
+                    Blocked in Browser
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 text-[10px] font-bold">
+                    Permission Needed
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Receive real-time system alerts on your Windows, Mac, or Android device when new customer orders, payments, or stock changes occur. 100% free with offline audio synthesis.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            {permission !== "granted" && (
+              <button
+                onClick={requestPermission}
+                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+              >
+                <BellRing className="w-3.5 h-3.5" />
+                <span>Enable Push</span>
+              </button>
+            )}
+
+            <button
+              onClick={toggleSound}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border ${
+                soundEnabled
+                  ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 border-slate-300 dark:border-slate-700"
+                  : "bg-white dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800"
+              }`}
+              title={soundEnabled ? "Mute audio chimes" : "Enable audio chimes"}
+            >
+              {soundEnabled ? (
+                <>
+                  <Volume2 className="w-4 h-4 text-blue-500" />
+                  <span>Sound ON</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-4 h-4" />
+                  <span>Sound Muted</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={triggerTestNotification}
+              className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <span>Test Alert</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
         {["ALL", "UNREAD", "ALERTS"].map((tab) => (
           <button
@@ -111,7 +164,8 @@ export default function NotificationsPage() {
         {filtered.map((item) => (
           <Card
             key={item.id}
-            className={`p-4 transition-all ${
+            onClick={() => markAsRead(item.id)}
+            className={`p-4 transition-all cursor-pointer ${
               !item.isRead ? "border-blue-200 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/10" : ""
             }`}
           >
@@ -119,18 +173,24 @@ export default function NotificationsPage() {
               <div className="flex items-start gap-3">
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                    item.type === "SUCCESS"
+                    item.type === "ORDER"
+                      ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
+                      : item.type === "PAYMENT"
+                      ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
+                      : item.type === "SUCCESS"
                       ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40"
                       : item.type === "ALERT"
                       ? "bg-purple-100 text-purple-600 dark:bg-purple-950/40"
-                      : item.type === "WARNING"
+                      : item.type === "WARNING" || item.type === "STOCK"
                       ? "bg-amber-100 text-amber-600 dark:bg-amber-950/40"
                       : "bg-blue-100 text-blue-600 dark:bg-blue-950/40"
                   }`}
                 >
+                  {item.type === "ORDER" && <Package className="w-5 h-5" />}
+                  {item.type === "PAYMENT" && <CreditCard className="w-5 h-5" />}
                   {item.type === "SUCCESS" && <CheckCircle2 className="w-5 h-5" />}
                   {item.type === "ALERT" && <Sparkles className="w-5 h-5" />}
-                  {item.type === "WARNING" && <AlertTriangle className="w-5 h-5" />}
+                  {(item.type === "WARNING" || item.type === "STOCK") && <AlertTriangle className="w-5 h-5" />}
                   {item.type === "INFO" && <Info className="w-5 h-5" />}
                 </div>
 

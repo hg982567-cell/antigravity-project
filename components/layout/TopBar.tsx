@@ -18,10 +18,19 @@ import {
   LogOut,
   ExternalLink,
   Check,
+  Volume2,
+  VolumeX,
+  BellRing,
+  Package,
+  CreditCard,
+  AlertTriangle,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useCurrency } from "@/components/providers/CurrencyContext";
 import { useDemo } from "@/components/providers/DemoContext";
+import { useNotifications } from "@/components/providers/NotificationContext";
 import { signOutFromFirebase } from "@/lib/firebase/client";
 
 interface TopBarProps {
@@ -37,9 +46,22 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
+
+  const {
+    permission,
+    soundEnabled,
+    notifications,
+    unreadCount,
+    requestPermission,
+    toggleSound,
+    triggerTestNotification,
+    markAllAsRead,
+    markAsRead,
+  } = useNotifications();
 
   useEffect(() => {
     fetch("/api/auth/session")
@@ -201,16 +223,196 @@ export function TopBar({ setMobileOpen }: TopBarProps) {
           <span className="hidden md:inline">Ask AI</span>
         </Link>
 
-        {/* Notifications Icon */}
-        <Link
-          href="/app/notifications"
-          className="relative p-2 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          title="Notifications"
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full animate-ping" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full" />
-        </Link>
+        {/* Interactive Notifications Drawer */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setNotificationDropdownOpen(!notificationDropdownOpen);
+              setStoreDropdownOpen(false);
+              setCurrencyDropdownOpen(false);
+              setProfileDropdownOpen(false);
+            }}
+            className="relative p-2 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Notifications & Alerts"
+            aria-label="Open Notifications"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full animate-ping" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full" />
+              </>
+            )}
+          </button>
+
+          {notificationDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+              {/* Header */}
+              <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Notifications
+                  </h3>
+                  {unreadCount > 0 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                      {unreadCount} New
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-medium">All caught up</span>
+                  )}
+                </div>
+
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <Check className="w-3 h-3" />
+                    <span>Mark all read</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Notification Push & Sound Controls Bar */}
+              <div className="p-2.5 bg-slate-100/70 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-700/80 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  {/* Push Permission Button / Indicator */}
+                  {permission === "granted" ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Push Alerts Active
+                    </span>
+                  ) : (
+                    <button
+                      onClick={requestPermission}
+                      className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+                      title="Allow browser system push notifications"
+                    >
+                      <BellRing className="w-3 h-3" />
+                      <span>Enable System Push</span>
+                    </button>
+                  )}
+
+                  {/* Sound Toggle & Test Alert */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={toggleSound}
+                      className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
+                        soundEnabled
+                          ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 shadow-xs"
+                          : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      }`}
+                      title={soundEnabled ? "Sound Alerts Enabled (Click to Mute)" : "Sound Muted (Click to Enable)"}
+                    >
+                      {soundEnabled ? (
+                        <Volume2 className="w-3.5 h-3.5 text-blue-500" />
+                      ) : (
+                        <VolumeX className="w-3.5 h-3.5" />
+                      )}
+                      <span className="text-[10px] hidden sm:inline">{soundEnabled ? "Sound ON" : "Muted"}</span>
+                    </button>
+
+                    <button
+                      onClick={triggerTestNotification}
+                      className="px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 transition-colors shadow-xs"
+                      title="Play notification chime and send a test system notification"
+                    >
+                      Test Alert
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400">
+                    No notifications yet.
+                  </div>
+                ) : (
+                  notifications.slice(0, 5).map((n) => {
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => {
+                          markAsRead(n.id);
+                          if (n.link) {
+                            setNotificationDropdownOpen(false);
+                            router.push(n.link);
+                          }
+                        }}
+                        className={`p-3 text-left cursor-pointer transition-colors flex items-start gap-3 ${
+                          !n.isRead
+                            ? "bg-blue-50/40 dark:bg-blue-950/20 hover:bg-blue-50/70 dark:hover:bg-blue-950/40"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        }`}
+                      >
+                        {/* Icon */}
+                        <div
+                          className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center mt-0.5 ${
+                            n.type === "ORDER"
+                              ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                              : n.type === "PAYMENT"
+                              ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                              : n.type === "ALERT"
+                              ? "bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400"
+                              : n.type === "STOCK"
+                              ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
+                              : n.type === "SUCCESS"
+                              ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                          }`}
+                        >
+                          {n.type === "ORDER" ? (
+                            <Package className="w-3.5 h-3.5" />
+                          ) : n.type === "PAYMENT" ? (
+                            <CreditCard className="w-3.5 h-3.5" />
+                          ) : n.type === "ALERT" || n.type === "STOCK" ? (
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                          ) : n.type === "SUCCESS" ? (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                              {n.title}
+                            </p>
+                            {!n.isRead && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5 leading-snug">
+                            {n.message}
+                          </p>
+                          <span className="text-[10px] text-slate-400 font-mono mt-1 block">
+                            {n.time}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-2 border-t border-slate-100 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-900/50">
+                <Link
+                  href="/app/notifications"
+                  onClick={() => setNotificationDropdownOpen(false)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline py-1"
+                >
+                  <span>Open Full Notifications Center</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Theme Toggle */}
         <button
