@@ -114,11 +114,6 @@ export function Footer() {
                   Cookie Preferences
                 </Link>
               </li>
-              <li className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                <Link href="/owner/login" className="text-amber-600 dark:text-amber-400 font-mono font-bold hover:underline flex items-center gap-1">
-                  <span>⚡ Owner Gateway</span>
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

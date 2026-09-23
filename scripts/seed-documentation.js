@@ -1130,7 +1130,7 @@ When a rate limit is exceeded, DropAI returns \`HTTP 429 Too Many Requests\` wit
     tags: "admin, owner, command center, telemetry, root",
     readingTime: "6 min read",
     sortOrder: 1,
-    featured: true,
+    featured: false,
     visibility: "ADMIN_ONLY",
     content: `## Owner Super Admin Control Center
 
@@ -1138,7 +1138,7 @@ When a rate limit is exceeded, DropAI returns \`HTTP 429 Too Many Requests\` wit
 > This documentation is classified as **ADMIN_ONLY**. It contains operational procedures for platform root administrators.
 
 ### Core Telemetry
-Access the command center at [/owner/dashboard](/owner/dashboard) to monitor:
+Platform administrators can monitor real-time infrastructure performance:
 - Real-time gross merchandise value across all merchant tenants
 - Active PostgreSQL connection pool latency and Neon compute autoscaling
 - Universal AI token utilization rates and provider error cascades
@@ -1158,7 +1158,7 @@ Access the command center at [/owner/dashboard](/owner/dashboard) to monitor:
     visibility: "ADMIN_ONLY",
     content: `## User Tenancy & Access Management
 
-Navigate to [/owner/users](/owner/users) to inspect and manage merchant accounts.
+Authorized administrators can inspect and manage merchant accounts via the internal management console.
 
 ### Administrative Actions
 - **Suspend Merchant**: Halts all outbound AI requests and store webhooks if a merchant violates terms of service.
@@ -1179,7 +1179,7 @@ Navigate to [/owner/users](/owner/users) to inspect and manage merchant accounts
     visibility: "ADMIN_ONLY",
     content: `## Universal AI Model Orchestration
 
-Under [/owner/ai](/owner/ai), platform owners can configure and assign custom LLMs for distinct platform workloads.
+Platform owners can configure and assign custom LLMs for distinct platform workloads.
 
 ### Dynamic Routing Matrix
 - **Ad Copy Generation**: Google Gemini 3.6 Flash (Fast, high-creative output).
@@ -1202,7 +1202,7 @@ Click **Test Connection** on any provider card to verify API credentials and liv
     visibility: "ADMIN_ONLY",
     content: `## Platform Emergency Lockdown & Kill-Switches
 
-Under [/owner/system](/owner/system), root administrators can activate immediate platform safeguards:
+Root administrators can activate immediate platform safeguards from the system control console:
 
 ### Kill-Switch Controls
 - **Maintenance Mode**: Halts public traffic with HTTP 503 and informative maintenance screen.

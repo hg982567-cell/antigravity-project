@@ -113,19 +113,22 @@ export async function GET(req: NextRequest) {
       categoryCounts[c.category] = c._count.id;
     });
 
-    const enrichedCategories = CATEGORIES_CONFIG.map((cat) => ({
-      ...cat,
-      articleCount: categoryCounts[cat.id] || 0,
-      accessible: cat.id === "admin-system" ? isOwner : (cat.id === "developer-api" ? isAuthenticated : true),
-    }));
+    const enrichedCategories = CATEGORIES_CONFIG
+      .filter((cat) => cat.id !== "admin-system" || isOwner)
+      .map((cat) => ({
+        ...cat,
+        articleCount: categoryCounts[cat.id] || 0,
+        accessible: cat.id === "admin-system" ? isOwner : (cat.id === "developer-api" ? isAuthenticated : true),
+      }));
 
-    // Popular articles (featured or highest positive feedback)
+    // Popular articles (featured or highest positive feedback, strictly customer-facing)
     const popularArticles = articles
-      .filter((a) => a.featured || a.helpfulYes > 0)
+      .filter((a) => (a.featured || a.helpfulYes > 0) && a.visibility !== "ADMIN_ONLY")
       .slice(0, 6);
 
-    // Recently updated articles
+    // Recently updated articles (strictly customer-facing)
     const recentArticles = [...articles]
+      .filter((a) => a.visibility !== "ADMIN_ONLY")
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       .slice(0, 5);
 
