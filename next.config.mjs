@@ -99,23 +99,23 @@ const nextConfig = {
       },
       {
         source: '/admin',
-        destination: '/owner/dashboard',
-        permanent: true,
+        destination: '/owner/login?redirect=/owner/dashboard',
+        permanent: false,
       },
       {
         source: '/admin/billing',
-        destination: '/owner/subscriptions',
-        permanent: true,
+        destination: '/owner/login?redirect=/owner/subscriptions',
+        permanent: false,
       },
       {
         source: '/admin/subscription',
-        destination: '/owner/subscriptions',
-        permanent: true,
+        destination: '/owner/login?redirect=/owner/subscriptions',
+        permanent: false,
       },
       {
         source: '/admin/subscriptions',
-        destination: '/owner/subscriptions',
-        permanent: true,
+        destination: '/owner/login?redirect=/owner/subscriptions',
+        permanent: false,
       },
       {
         source: '/owner/billing',

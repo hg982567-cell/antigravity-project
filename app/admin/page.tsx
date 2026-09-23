@@ -3,5 +3,5 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default function AdminRedirectPage() {
-  redirect("/owner/dashboard");
+  redirect("/owner/login?redirect=/owner/dashboard");
 }
