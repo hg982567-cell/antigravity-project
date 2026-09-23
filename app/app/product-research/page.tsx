@@ -160,8 +160,8 @@ export default function ProductResearchPage() {
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
             <div>
-              <p className="font-bold text-white">AI Opportunity Radar Temporarily Disabled by Platform Owner</p>
-              <p className="text-slate-400 text-[11px] mt-0.5">The platform administrator has turned off automated neural product scoring. Showing cached catalog.</p>
+              <p className="font-bold text-white">AI Opportunity Radar Scheduled Maintenance</p>
+              <p className="text-slate-400 text-[11px] mt-0.5">Automated neural product scoring is undergoing platform maintenance. Showing verified catalog.</p>
             </div>
           </div>
         </div>

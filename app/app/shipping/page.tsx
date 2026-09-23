@@ -89,7 +89,7 @@ export default function ShippingPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold font-mono text-slate-700 dark:text-slate-300 uppercase flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 text-blue-500" />
-              Active Platform Carrier Rates & Routing (Configured by Platform Owner)
+              Active Platform Carrier Rates & Routing
             </h3>
             <span className="text-[10px] font-mono text-slate-400">{shippingRules.length} Active Carrier Protocols</span>
           </div>

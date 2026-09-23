@@ -177,8 +177,8 @@ export default function CreativeStudioPage() {
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
             <div>
-              <p className="font-bold text-white">AI Creative Studio Temporarily Disabled by Platform Owner</p>
-              <p className="text-slate-400 text-[11px] mt-0.5">Automated copy generation is turned off in Owner System Settings. Pre-generated samples remain available.</p>
+              <p className="font-bold text-white">AI Creative Studio Scheduled Maintenance</p>
+              <p className="text-slate-400 text-[11px] mt-0.5">Automated AI copy generation is currently undergoing maintenance. Pre-generated high-converting samples remain available.</p>
             </div>
           </div>
         </div>

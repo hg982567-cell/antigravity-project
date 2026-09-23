@@ -85,8 +85,8 @@ export default function AutomationsPage() {
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
             <div>
-              <p className="font-bold text-white">Autonomous Order Routing Disabled by Platform Owner</p>
-              <p className="text-slate-400 text-[11px] mt-0.5">Automated supplier dispatch is turned off in Owner System Settings. Automated webhooks are running in dry-run mode.</p>
+              <p className="font-bold text-white">Autonomous Order Routing Scheduled Optimization</p>
+              <p className="text-slate-400 text-[11px] mt-0.5">Automated supplier dispatch is currently undergoing system optimization. Manual fulfillment remains fully operational.</p>
             </div>
           </div>
         </div>
