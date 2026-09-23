@@ -118,11 +118,6 @@ const nextConfig = {
         permanent: false,
       },
       {
-        source: '/owner/billing',
-        destination: '/owner/subscriptions',
-        permanent: true,
-      },
-      {
         source: '/owner/subscription',
         destination: '/owner/subscriptions',
         permanent: true,

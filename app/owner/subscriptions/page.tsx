@@ -19,6 +19,9 @@ import {
   Building,
   Check,
   X,
+  Wallet,
+  ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function OwnerSubscriptionsPage() {
@@ -30,6 +33,18 @@ export default function OwnerSubscriptionsPage() {
   const [processingInvoiceId, setProcessingInvoiceId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
+  // Receiving Payout Settings (Where customer payments will arrive)
+  const [payoutForm, setPayoutForm] = useState({
+    OWNER_UPI_ID: "",
+    OWNER_UPI_NAME: "",
+    OWNER_BANK_NAME: "",
+    OWNER_BANK_ACCOUNT_NAME: "",
+    OWNER_BANK_ACCOUNT_NUMBER: "",
+    OWNER_BANK_IFSC_SWIFT: "",
+    OWNER_BANK_BRANCH: "",
+  });
+  const [savingPayout, setSavingPayout] = useState(false);
+
   const loadPlans = async () => {
     setLoading(true);
     try {
@@ -38,8 +53,11 @@ export default function OwnerSubscriptionsPage() {
       setPlans(data.plans || []);
       setUserCounts(data.userCountByPlan || {});
       setPendingInvoices(data.pendingInvoices || []);
+      if (data.payoutSettings) {
+        setPayoutForm(data.payoutSettings);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Owner subscriptions load error:", err);
     } finally {
       setLoading(false);
     }
@@ -48,6 +66,30 @@ export default function OwnerSubscriptionsPage() {
   useEffect(() => {
     loadPlans();
   }, []);
+
+  const handleSavePayout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingPayout(true);
+    setActionSuccess(null);
+    try {
+      const res = await fetch("/api/owner/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_payout_settings",
+          settings: payoutForm,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save receiving account details");
+      setActionSuccess("Receiving Bank & UPI details successfully updated! Customers will now see these details.");
+      setTimeout(() => setActionSuccess(null), 5000);
+    } catch (err: any) {
+      alert(err.message || "Failed to save receiving account settings");
+    } finally {
+      setSavingPayout(false);
+    }
+  };
 
   const handleApproveInvoice = async (invoiceId: string) => {
     if (!confirm("Are you sure you have verified the payment in your bank/UPI account? This will immediately activate the merchant's subscription.")) {
@@ -120,6 +162,12 @@ export default function OwnerSubscriptionsPage() {
     }
   };
 
+  const qrPreviewUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+    `upi://pay?pa=${payoutForm.OWNER_UPI_ID || "owner@okhdfcbank"}&pn=${encodeURIComponent(
+      payoutForm.OWNER_UPI_NAME || "DropAI Platform"
+    )}&cu=INR`
+  )}`;
+
   return (
     <OwnerShell>
       {/* Header */}
@@ -127,14 +175,14 @@ export default function OwnerSubscriptionsPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black text-white tracking-tight font-mono">
-              SUBSCRIPTION &amp; PLAN MANAGER
+              SUBSCRIPTION &amp; PAYOUT MANAGER
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-              COMMERCIAL TIERS &amp; VERIFICATION
+              OWNER REVENUE &amp; BANK SETTLEMENT
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Review pending merchant payments, verify UTR numbers, and configure pricing tiers and AI quotas.
+            Configure where customer payments will arrive (UPI &amp; Bank), approve pending UTR receipts, and manage subscription tiers.
           </p>
         </div>
 
@@ -143,7 +191,7 @@ export default function OwnerSubscriptionsPage() {
           className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-amber-400" : ""}`} />
-          Refresh Plans
+          Refresh
         </button>
       </div>
 
@@ -154,7 +202,178 @@ export default function OwnerSubscriptionsPage() {
         </div>
       )}
 
-      {/* PENDING PAYMENT CONFIRMATIONS TABLE */}
+      {/* SECTION 1: WHERE CUSTOMER PAYMENTS ARRIVE (UPI & BANK DETAILS CONFIGURATION) */}
+      <div className="rounded-2xl bg-slate-950 border border-emerald-500/40 overflow-hidden shadow-2xl">
+        <div className="p-4 bg-emerald-500/10 border-b border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-emerald-300 font-mono">
+                YOUR RECEIVING ACCOUNTS (Where Plan Purchase Money Will Arrive)
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Enter your UPI ID and Bank Account details below. Customers will transfer directly into these accounts. You can edit anytime.
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            EDITABLE 24/7
+          </span>
+        </div>
+
+        <form onSubmit={handleSavePayout} className="p-5 space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Column 1: UPI & QR Code Settings */}
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+              <div className="flex items-center gap-2 text-white font-mono font-bold text-xs border-b border-slate-800 pb-2">
+                <QrCode className="w-4 h-4 text-emerald-400" />
+                <span>PRIMARY UPI &amp; QR CODE SETTINGS</span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-mono text-slate-300 block mb-1">
+                    Your Real UPI ID (VPA) <span className="text-emerald-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={payoutForm.OWNER_UPI_ID}
+                    onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_UPI_ID: e.target.value })}
+                    placeholder="e.g. yourname@okhdfcbank or 9876543210@paytm"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">
+                    PhonePe, Google Pay, Paytm, or BHIM UPI ID where customer funds arrive.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-mono text-slate-300 block mb-1">
+                    Merchant / Payee Display Name <span className="text-emerald-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={payoutForm.OWNER_UPI_NAME}
+                    onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_UPI_NAME: e.target.value })}
+                    placeholder="e.g. DropAI Commercial or Your Real Name"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">
+                    The name displayed to customers in their payment app when scanning your QR code.
+                  </span>
+                </div>
+
+                {/* Live QR Preview */}
+                <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-950 border border-slate-800">
+                  <div className="p-1.5 bg-white rounded-lg shrink-0 shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={qrPreviewUrl} alt="Live UPI QR" className="w-20 h-20 object-contain" />
+                  </div>
+                  <div className="text-xs space-y-0.5 font-mono">
+                    <span className="text-[10px] uppercase text-emerald-400 font-bold block">Live Customer QR Preview</span>
+                    <p className="text-white font-bold text-xs truncate max-w-[180px]">{payoutForm.OWNER_UPI_NAME || "DropAI Platform"}</p>
+                    <p className="text-amber-400 text-[11px] truncate max-w-[180px]">{payoutForm.OWNER_UPI_ID || "owner@okhdfcbank"}</p>
+                    <p className="text-[10px] text-slate-500">Auto-updates as you type your UPI ID</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Bank Account Settings */}
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+              <div className="flex items-center gap-2 text-white font-mono font-bold text-xs border-b border-slate-800 pb-2">
+                <Building className="w-4 h-4 text-blue-400" />
+                <span>DIRECT BANK TRANSFER (NEFT / IMPS / WIRE)</span>
+              </div>
+
+              <div className="space-y-3 font-mono text-xs">
+                <div>
+                  <label className="text-[11px] text-slate-300 block mb-1">
+                    Account Holder Name (As per Bank Passbook)
+                  </label>
+                  <input
+                    type="text"
+                    value={payoutForm.OWNER_BANK_ACCOUNT_NAME}
+                    onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_BANK_ACCOUNT_NAME: e.target.value })}
+                    placeholder="e.g. Your Full Name or Company Name"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-400"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-slate-300 block mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      value={payoutForm.OWNER_BANK_NAME}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_BANK_NAME: e.target.value })}
+                      placeholder="e.g. State Bank of India, HDFC"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-300 block mb-1">Account Number</label>
+                    <input
+                      type="text"
+                      value={payoutForm.OWNER_BANK_ACCOUNT_NUMBER}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_BANK_ACCOUNT_NUMBER: e.target.value })}
+                      placeholder="e.g. 50200084920194"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-slate-300 block mb-1">IFSC Code</label>
+                    <input
+                      type="text"
+                      value={payoutForm.OWNER_BANK_IFSC_SWIFT}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_BANK_IFSC_SWIFT: e.target.value })}
+                      placeholder="e.g. SBIN0004567"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-300 block mb-1">Branch / City</label>
+                    <input
+                      type="text"
+                      value={payoutForm.OWNER_BANK_BRANCH}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, OWNER_BANK_BRANCH: e.target.value })}
+                      placeholder="e.g. Main Branch, Mumbai"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-400"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-800">
+            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Saved securely in Neon PostgreSQL. Customers only see public payment details.</span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingPayout}
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              <span>{savingPayout ? "Saving Details..." : "Save Receiving Account Details"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* SECTION 2: PENDING PAYMENT CONFIRMATIONS TABLE */}
       <div className="rounded-2xl bg-slate-950 border border-amber-500/30 overflow-hidden shadow-xl">
         <div className="p-4 bg-amber-500/10 border-b border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -203,7 +422,7 @@ export default function OwnerSubscriptionsPage() {
                       ${inv.amount.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-slate-300">
-                      {inv.paymentMethod === "RAZORPAY_UPI" ? "UPI / QR Code" : inv.paymentMethod.replace("_", " ")}
+                      {inv.paymentMethod === "RAZORPAY_UPI" ? "UPI / QR Code" : String(inv.paymentMethod).replace("_", " ")}
                     </td>
                     <td className="px-4 py-3 text-amber-300 font-bold bg-amber-500/5 max-w-xs truncate" title={inv.paymentReference}>
                       {inv.paymentReference || "No UTR provided"}
@@ -241,7 +460,7 @@ export default function OwnerSubscriptionsPage() {
         )}
       </div>
 
-      {/* Plan Cards Grid */}
+      {/* SECTION 3: COMMERCIAL PRICING TIERS & RESOURCE CEILINGS */}
       <div className="space-y-3">
         <h2 className="text-sm font-bold text-slate-400 uppercase font-mono tracking-wider">
           Commercial Pricing Tiers &amp; Resource Ceilings

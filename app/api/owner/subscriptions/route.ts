@@ -119,7 +119,25 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ plans, userCountByPlan, pendingInvoices });
+    // Query receiving account settings (UPI & Bank)
+    const settings = await prisma.systemSetting.findMany({
+      where: { category: "PAYMENTS" },
+    });
+    const settingsMap: Record<string, string> = {};
+    for (const s of settings) {
+      settingsMap[s.key] = s.value;
+    }
+    const payoutSettings = {
+      OWNER_UPI_ID: settingsMap["OWNER_UPI_ID"] || "owner@okhdfcbank",
+      OWNER_UPI_NAME: settingsMap["OWNER_UPI_NAME"] || "DropAI Commercial Payouts",
+      OWNER_BANK_NAME: settingsMap["OWNER_BANK_NAME"] || "HDFC Bank Ltd",
+      OWNER_BANK_ACCOUNT_NAME: settingsMap["OWNER_BANK_ACCOUNT_NAME"] || "DropAI Technologies Commercial",
+      OWNER_BANK_ACCOUNT_NUMBER: settingsMap["OWNER_BANK_ACCOUNT_NUMBER"] || "50200084920194",
+      OWNER_BANK_IFSC_SWIFT: settingsMap["OWNER_BANK_IFSC_SWIFT"] || "HDFC0001234",
+      OWNER_BANK_BRANCH: settingsMap["OWNER_BANK_BRANCH"] || "Financial District, Mumbai",
+    };
+
+    return NextResponse.json({ plans, userCountByPlan, pendingInvoices, payoutSettings });
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED_OWNER") {
       return NextResponse.json({ error: "Unauthorized: Owner privilege required." }, { status: 403 });
@@ -133,9 +151,42 @@ export async function POST(req: Request) {
   try {
     const owner = await requireOwner();
     const body = await req.json();
-    const { action, planId, data, invoiceId, reason } = body;
+    const { action, planId, data, invoiceId, reason, settings } = body;
     const ip = getClientIp(req);
     const userAgent = req.headers.get("user-agent") || "Owner Console";
+
+    // 0. Save Receiving Payout / UPI / Bank Settings
+    if (action === "save_payout_settings" && settings && typeof settings === "object") {
+      for (const [key, value] of Object.entries(settings)) {
+        if (value !== undefined && value !== null) {
+          await prisma.systemSetting.upsert({
+            where: { key },
+            update: { value: String(value) },
+            create: {
+              key,
+              value: String(value),
+              category: "PAYMENTS",
+              description: "Owner payout parameter",
+            },
+          });
+        }
+      }
+
+      await logOwnerAction({
+        ownerId: owner.id,
+        action: "PAYMENT_GATEWAYS_CONFIGURED",
+        targetType: "SUBSCRIPTION",
+        severity: "HIGH",
+        previousValue: { keysUpdated: Object.keys(settings) },
+        ipAddress: ip,
+        userAgent,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Receiving account & UPI details successfully updated and saved in Neon PostgreSQL!",
+      });
+    }
 
     // 1. Approve Merchant Payment & Activate Subscription Plan
     if (action === "approve_invoice") {
