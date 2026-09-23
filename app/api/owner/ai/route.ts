@@ -114,8 +114,16 @@ export async function GET() {
       include: { user: { select: { email: true, name: true } } },
     });
 
+    const sanitizedProviders = providers.map((p) => ({
+      ...p,
+      apiKeyEncrypted: p.apiKeyEncrypted
+        ? `••••••••••••${p.apiKeyEncrypted.slice(-4)}`
+        : null,
+      hasApiKey: Boolean(p.apiKeyEncrypted),
+    }));
+
     return NextResponse.json({
-      providers,
+      providers: sanitizedProviders,
       routingRules,
       totalAiRequests,
       recentRequests,

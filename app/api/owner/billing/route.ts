@@ -117,6 +117,18 @@ export async function GET() {
     // Mask sensitive secrets before sending to client UI
     const maskedConfig = {
       ...config,
+      RAZORPAY_KEY_SECRET: config.RAZORPAY_KEY_SECRET
+        ? `••••••••••••${config.RAZORPAY_KEY_SECRET.slice(-4)}`
+        : "",
+      STRIPE_SECRET_KEY: config.STRIPE_SECRET_KEY
+        ? `••••••••••••${config.STRIPE_SECRET_KEY.slice(-4)}`
+        : "",
+      STRIPE_WEBHOOK_SECRET: config.STRIPE_WEBHOOK_SECRET
+        ? `••••••••••••${config.STRIPE_WEBHOOK_SECRET.slice(-4)}`
+        : "",
+      PAYPAL_SECRET: config.PAYPAL_SECRET
+        ? `••••••••••••${config.PAYPAL_SECRET.slice(-4)}`
+        : "",
       RAZORPAY_KEY_SECRET_MASKED: config.RAZORPAY_KEY_SECRET
         ? `••••••••••••${config.RAZORPAY_KEY_SECRET.slice(-4)}`
         : "",
