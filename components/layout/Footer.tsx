@@ -79,6 +79,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/track" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Track Order
+                </Link>
+              </li>
+              <li>
                 <Link href="/help" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Help Center & Docs
                 </Link>

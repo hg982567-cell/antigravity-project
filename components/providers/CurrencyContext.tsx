@@ -10,7 +10,11 @@ import {
 } from "@/lib/currency";
 
 interface CurrencyContextType {
+  baseCurrency: string;
+  baseCurrencyInfo: CurrencyInfo;
+  setBaseCurrency: (code: string) => void;
   currentCurrency: string;
+  displayCurrency: string;
   currencyInfo: CurrencyInfo;
   setCurrency: (code: string) => void;
   formatPrice: (amountInUSD: number) => string;
@@ -21,37 +25,55 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<string>(DEFAULT_CURRENCY);
+  const [baseCurrency, setBaseCurrencyState] = useState<string>("USD");
+  const [displayCurrency, setDisplayCurrencyState] = useState<string>(DEFAULT_CURRENCY);
 
   useEffect(() => {
-    const saved = localStorage.getItem("dropai_display_currency");
-    if (saved && SUPPORTED_CURRENCIES[saved]) {
-      setCurrencyState(saved);
+    const savedBase = localStorage.getItem("ravan_base_currency") || localStorage.getItem("dropai_base_currency");
+    if (savedBase && SUPPORTED_CURRENCIES[savedBase]) {
+      setBaseCurrencyState(savedBase);
+    }
+
+    const savedDisplay = localStorage.getItem("ravan_display_currency") || localStorage.getItem("dropai_display_currency");
+    if (savedDisplay && SUPPORTED_CURRENCIES[savedDisplay]) {
+      setDisplayCurrencyState(savedDisplay);
     }
   }, []);
 
-  const setCurrency = (code: string) => {
+  const setBaseCurrency = (code: string) => {
     if (SUPPORTED_CURRENCIES[code]) {
-      setCurrencyState(code);
-      localStorage.setItem("dropai_display_currency", code);
+      setBaseCurrencyState(code);
+      localStorage.setItem("ravan_base_currency", code);
     }
   };
 
-  const currencyInfo = SUPPORTED_CURRENCIES[currency] || SUPPORTED_CURRENCIES.USD;
-
-  const formatPrice = (amountInUSD: number): string => {
-    const converted = convertCurrency(amountInUSD, "USD", currency);
-    return formatCurrency(converted, currency);
+  const setCurrency = (code: string) => {
+    if (SUPPORTED_CURRENCIES[code]) {
+      setDisplayCurrencyState(code);
+      localStorage.setItem("ravan_display_currency", code);
+    }
   };
 
-  const convertPrice = (amountInUSD: number): number => {
-    return convertCurrency(amountInUSD, "USD", currency);
+  const baseCurrencyInfo = SUPPORTED_CURRENCIES[baseCurrency] || SUPPORTED_CURRENCIES.USD;
+  const currencyInfo = SUPPORTED_CURRENCIES[displayCurrency] || SUPPORTED_CURRENCIES.USD;
+
+  const formatPrice = (amountInBase: number): string => {
+    const converted = convertCurrency(amountInBase, baseCurrency, displayCurrency);
+    return formatCurrency(converted, displayCurrency);
+  };
+
+  const convertPrice = (amountInBase: number): number => {
+    return convertCurrency(amountInBase, baseCurrency, displayCurrency);
   };
 
   return (
     <CurrencyContext.Provider
       value={{
-        currentCurrency: currency,
+        baseCurrency,
+        baseCurrencyInfo,
+        setBaseCurrency,
+        currentCurrency: displayCurrency,
+        displayCurrency,
         currencyInfo,
         setCurrency,
         formatPrice,

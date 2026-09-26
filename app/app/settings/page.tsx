@@ -18,7 +18,13 @@ import {
 } from "lucide-react";
 
 export default function SettingsPage() {
-  const { currentCurrency, setCurrency, availableCurrencies } = useCurrency();
+  const {
+    baseCurrency,
+    setBaseCurrency,
+    currentCurrency,
+    setCurrency,
+    availableCurrencies,
+  } = useCurrency();
   const { theme, setTheme } = useTheme();
 
   const [activeTab, setActiveTab] = useState("PROFILE");
@@ -156,15 +162,19 @@ export default function SettingsPage() {
             )}
 
             {activeTab === "LOCALIZATION" && (
-              <div className="space-y-4 max-w-xl text-xs">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Primary Display Currency
-                  </label>
+              <div className="space-y-5 max-w-xl text-xs">
+                {/* Base Currency */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-slate-900 dark:text-white">
+                      Store Base Currency (Ledger &amp; Settlements)
+                    </label>
+                    <Badge variant="purple" size="sm">ACCOUNTING BASE</Badge>
+                  </div>
                   <select
-                    value={currentCurrency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    value={baseCurrency}
+                    onChange={(e) => setBaseCurrency(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-semibold"
                   >
                     {availableCurrencies.map((c) => (
                       <option key={c.code} value={c.code}>
@@ -172,9 +182,68 @@ export default function SettingsPage() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Dynamic exchange rates convert base store revenue automatically.
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    The immutable base currency used for database order totals, product cost accounting, and supplier payouts.
                   </p>
+                </div>
+
+                {/* Display Currency */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-slate-900 dark:text-white">
+                      Active Display Currency (Presentation Only)
+                    </label>
+                    <Badge variant="info" size="sm">DASHBOARD UI</Badge>
+                  </div>
+                  <select
+                    value={currentCurrency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  >
+                    {availableCurrencies.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.name} ({c.code} - {c.symbol})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Live dynamic exchange rates convert your Base Currency into this Display Currency across the merchant interface. Changing this will never alter your store's underlying base revenue.
+                  </p>
+                </div>
+
+                {/* Store Country & Shipping Region */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Store Business Country
+                    </label>
+                    <select
+                      defaultValue="US"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="US">🇺🇸 United States</option>
+                      <option value="IN">🇮🇳 India</option>
+                      <option value="GB">🇬🇧 United Kingdom</option>
+                      <option value="CA">🇨🇦 Canada</option>
+                      <option value="AU">🇦🇺 Australia</option>
+                      <option value="DE">🇩🇪 Germany</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Primary Shipping Corridor
+                    </label>
+                    <select
+                      defaultValue="GLOBAL_US"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="GLOBAL_US">North America Priority (USPS / FedEx)</option>
+                      <option value="GLOBAL_EU">European Express (DHL / YunExpress)</option>
+                      <option value="DOMESTIC_IN">India Domestic (Delhivery / India Post)</option>
+                      <option value="GLOBAL_ALL">Worldwide Standard Logistics</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>

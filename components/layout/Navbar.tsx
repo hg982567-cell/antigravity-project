@@ -25,6 +25,7 @@ export function Navbar() {
 
   const navLinks = [
     { name: "Features", href: "/features" },
+    { name: "Track Order", href: "/track" },
     { name: "Pricing", href: "/pricing" },
     { name: "About", href: "/about" },
     { name: "Security", href: "/security" },

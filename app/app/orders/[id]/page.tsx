@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 
 export default function OrderDetailPage() {
@@ -30,6 +31,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelled, setCancelled] = useState(false);
+  const [liveTracking, setLiveTracking] = useState<any | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -38,6 +40,15 @@ export default function OrderDetailPage() {
         const data = await res.json();
         const found = (data.orders || []).find((o: any) => o.id === params.id) || data.orders?.[0];
         setOrder(found);
+
+        if (found?.shipments?.[0]?.trackingNumber) {
+          fetch(`/api/app/shipping/track?trackingNumber=${encodeURIComponent(found.shipments[0].trackingNumber)}`)
+            .then(r => r.json())
+            .then(json => {
+              if (json.success && json.tracking) setLiveTracking(json.tracking);
+            })
+            .catch(() => null);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -166,19 +177,78 @@ export default function OrderDetailPage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-sm">Shipment & Carrier Tracking</CardTitle>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Carrier: {shipment.carrier} • Tracking #{shipment.trackingNumber}
+                  <p className="text-xs text-slate-500 mt-0.5 font-mono">
+                    Carrier: {liveTracking?.carrierName || shipment.carrier} • Tracking #{shipment.trackingNumber}
                   </p>
                 </div>
-                <Badge variant="success" size="sm">{shipment.status}</Badge>
+                <Badge
+                  variant={
+                    (liveTracking?.status || shipment.status) === "DELIVERED"
+                      ? "success"
+                      : (liveTracking?.status || shipment.status) === "IN_TRANSIT"
+                      ? "info"
+                      : "warning"
+                  }
+                  size="sm"
+                >
+                  {liveTracking?.statusText || shipment.status}
+                </Badge>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs flex items-center justify-between">
-                  <span className="text-slate-500">Estimated Delivery:</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : "Standard 5-7 Business Days"}
-                  </span>
-                </div>
+              <CardContent className="space-y-4">
+                {liveTracking?.status === "unavailable" ? (
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Tracking information unavailable</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      The carrier has not yet recorded scanning events for this package. Scans will populate automatically once the origin hub processes the shipment.
+                    </p>
+                  </div>
+                ) : liveTracking?.events && liveTracking.events.length > 0 ? (
+                  <div className="space-y-3 pt-1 border-l-2 border-blue-500 ml-3 pl-4 text-xs">
+                    {liveTracking.events.map((evt: any, idx: number) => (
+                      <div key={idx} className="relative">
+                        <div
+                          className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full ${
+                            idx === liveTracking.events.length - 1
+                              ? "bg-blue-600 ring-4 ring-blue-500/20"
+                              : "bg-slate-300 dark:bg-slate-700"
+                          }`}
+                        />
+                        <p className="font-bold text-slate-900 dark:text-white">{evt.description}</p>
+                        <p className="text-slate-400 text-[10px]">
+                          {evt.location} • {new Date(evt.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs flex items-center justify-between">
+                    <span className="text-slate-500">Estimated Delivery:</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {liveTracking?.estimatedDelivery
+                        ? new Date(liveTracking.estimatedDelivery).toLocaleDateString()
+                        : shipment.estimatedDelivery
+                        ? new Date(shipment.estimatedDelivery).toLocaleDateString()
+                        : "Standard 3-5 Business Days"}
+                    </span>
+                  </div>
+                )}
+
+                {liveTracking?.trackingUrl && (
+                  <div className="pt-2 flex justify-end">
+                    <a
+                      href={liveTracking.trackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs border border-slate-300 dark:border-slate-700 transition-colors"
+                    >
+                      <span>Track on Official {liveTracking.carrierName || "Carrier"} Portal</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

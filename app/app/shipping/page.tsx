@@ -24,6 +24,43 @@ export default function ShippingPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTrackingModal, setActiveTrackingModal] = useState<any | null>(null);
+  const [liveTracking, setLiveTracking] = useState<any | null>(null);
+  const [loadingTracking, setLoadingTracking] = useState(false);
+
+  useEffect(() => {
+    if (!activeTrackingModal) {
+      setLiveTracking(null);
+      return;
+    }
+    async function fetchTrackingTelemetry() {
+      setLoadingTracking(true);
+      try {
+        const res = await fetch(`/api/app/shipping/track?trackingNumber=${encodeURIComponent(activeTrackingModal.trackingNumber)}`);
+        const json = await res.json();
+        if (json.success && json.tracking) {
+          setLiveTracking(json.tracking);
+        } else {
+          setLiveTracking({
+            status: "unavailable",
+            statusText: "Tracking information unavailable",
+            events: [],
+            isAvailable: false,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch tracking telemetry:", err);
+        setLiveTracking({
+          status: "unavailable",
+          statusText: "Tracking information unavailable",
+          events: [],
+          isAvailable: false,
+        });
+      } finally {
+        setLoadingTracking(false);
+      }
+    }
+    fetchTrackingTelemetry();
+  }, [activeTrackingModal]);
 
   useEffect(() => {
     async function load() {
@@ -184,36 +221,104 @@ export default function ShippingPage() {
       {activeTrackingModal && (
         <Modal
           isOpen={!!activeTrackingModal}
-          onClose={() => setActiveTrackingModal(null)}
-          title={`Tracking: ${activeTrackingModal.carrier} ${activeTrackingModal.trackingNumber}`}
-          description={`Order ${activeTrackingModal.order?.orderNumber} to ${activeTrackingModal.order?.customer?.name}`}
+          onClose={() => {
+            setActiveTrackingModal(null);
+            setLiveTracking(null);
+          }}
+          title={`Shipment Telemetry: ${activeTrackingModal.carrier} ${activeTrackingModal.trackingNumber}`}
+          description={`Order ${activeTrackingModal.order?.orderNumber || "Ref"} to ${activeTrackingModal.order?.customer?.name || "Customer"}`}
         >
           <div className="space-y-4 text-xs">
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-slate-400">Status</p>
-                <p className="font-bold text-slate-900 dark:text-white">{activeTrackingModal.status}</p>
+            {loadingTracking ? (
+              <div className="py-8 flex flex-col items-center justify-center space-y-3">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-slate-400 font-mono text-[11px]">Contacting carrier logistics gateway...</p>
               </div>
-              <Badge variant="success" size="sm">Carrier Telemetry Verified</Badge>
-            </div>
+            ) : liveTracking && liveTracking.status === "unavailable" ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Tracking information unavailable</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    The carrier has not yet recorded scanning events for tracking number <strong className="font-mono text-white">{activeTrackingModal.trackingNumber}</strong>. Milestones will automatically appear as soon as the carrier registers receipt at their sorting hub.
+                  </p>
+                </div>
 
-            <div className="space-y-4 pt-2 border-l-2 border-blue-500 ml-3 pl-4">
-              <div className="relative">
-                <div className="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-blue-600" />
-                <p className="font-bold text-slate-900 dark:text-white">Departed Regional Hub Sort Facility</p>
-                <p className="text-slate-400 text-[10px]">USPS Sorting Center, Jamaica NY • Yesterday 14:22</p>
+                {liveTracking.trackingUrl && (
+                  <div className="pt-2 flex justify-end">
+                    <a
+                      href={liveTracking.trackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400 font-semibold text-xs border border-slate-700 transition-colors"
+                    >
+                      <span>Check on {liveTracking.carrierName || "Carrier Portal"}</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
               </div>
-              <div className="relative">
-                <div className="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700" />
-                <p className="font-semibold text-slate-700 dark:text-slate-300">Carrier Picked Up Parcel at Supplier Warehouse</p>
-                <p className="text-slate-400 text-[10px]">Depot A-4, NJ Hub • 2 days ago</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-slate-400">Carrier Status</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{liveTracking?.statusText || activeTrackingModal.status}</p>
+                  </div>
+                  <Badge
+                    variant={
+                      (liveTracking?.status || activeTrackingModal.status) === "DELIVERED"
+                        ? "success"
+                        : "info"
+                    }
+                    size="sm"
+                  >
+                    Carrier Verified
+                  </Badge>
+                </div>
+
+                {liveTracking?.events && liveTracking.events.length > 0 ? (
+                  <div className="space-y-4 pt-2 border-l-2 border-blue-500 ml-3 pl-4">
+                    {liveTracking.events.map((evt: any, idx: number) => (
+                      <div key={idx} className="relative">
+                        <div
+                          className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full ${
+                            idx === liveTracking.events.length - 1
+                              ? "bg-blue-600 ring-4 ring-blue-500/20"
+                              : "bg-slate-300 dark:bg-slate-700"
+                          }`}
+                        />
+                        <p className="font-bold text-slate-900 dark:text-white">{evt.description}</p>
+                        <p className="text-slate-400 text-[10px]">
+                          {evt.location} • {new Date(evt.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">Carrier Scan Registered</p>
+                    <p className="text-slate-400 text-[11px] mt-1">Package in transit with {activeTrackingModal.carrier}. Detailed route milestones are synchronizing.</p>
+                  </div>
+                )}
+
+                {liveTracking?.trackingUrl && (
+                  <div className="pt-2 flex justify-end">
+                    <a
+                      href={liveTracking.trackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs border border-slate-300 dark:border-slate-700 transition-colors"
+                    >
+                      <span>Carrier Portal Tracking</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
               </div>
-              <div className="relative">
-                <div className="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700" />
-                <p className="font-semibold text-slate-700 dark:text-slate-300">Shipping Label Created & Order Auto-Dispatched</p>
-                <p className="text-slate-400 text-[10px]">RAVAN SHIPPING Automation Engine • 3 days ago</p>
-              </div>
-            </div>
+            )}
           </div>
         </Modal>
       )}

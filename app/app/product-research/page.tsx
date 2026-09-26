@@ -68,9 +68,14 @@ export default function ProductResearchPage() {
   const categories = ["All", "Personal Electronics", "Home & Office", "Home Decor", "Phone Accessories", "Pet Supplies", "Fitness & Outdoor"];
 
   const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+
   const handleImport = async () => {
     if (!selectedProduct) return;
     setImporting(true);
+    setImportError(null);
+    setImportMessage(null);
     try {
       let prodImages = ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600"];
       if (selectedProduct.images) {
@@ -100,15 +105,21 @@ export default function ProductResearchPage() {
         }),
       });
 
-      if (res.ok) {
+      const json = await res.json();
+      if (res.ok && json.success) {
         setImportSuccess(true);
+        setImportMessage(json.message || "Product imported successfully to your catalog!");
         setTimeout(() => {
           setImportSuccess(false);
+          setImportMessage(null);
           setSelectedProduct(null);
-        }, 1500);
+        }, 2200);
+      } else {
+        setImportError(json.error || "Failed to persist product to database.");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Import error:", e);
+      setImportError(e.message || "Network error occurred while connecting to store database.");
     } finally {
       setImporting(false);
     }
@@ -370,10 +381,17 @@ export default function ProductResearchPage() {
               </div>
             </div>
 
+            {importError && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 flex items-center gap-2 text-xs">
+                <ShieldAlert className="w-4 h-4 shrink-0 text-red-500" />
+                <span>{importError}</span>
+              </div>
+            )}
+
             {importSuccess ? (
-              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Imported to store catalog successfully!</span>
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center justify-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>{importMessage || "Imported to store catalog successfully!"}</span>
               </div>
             ) : (
               <div className="pt-2 flex items-center justify-end gap-3">

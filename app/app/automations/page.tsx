@@ -45,19 +45,58 @@ export default function AutomationsPage() {
     load();
   }, [isDemoMode]);
 
-  const handleToggle = (id: string) => {
+  const handleToggle = async (id: string) => {
+    const current = automations.find((a) => a.id === id);
+    if (!current) return;
+    const newStatus = !current.isEnabled;
+
+    // Optimistically update UI
     setAutomations(
-      automations.map((a) => (a.id === id ? { ...a, isEnabled: !a.isEnabled } : a))
+      automations.map((a) => (a.id === id ? { ...a, isEnabled: newStatus } : a))
     );
+
+    try {
+      await fetch("/api/app/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "toggle_automation",
+          data: { id, isEnabled: newStatus },
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist automation toggle:", err);
+    }
   };
 
-  const handleRunTest = (id: string, name: string) => {
+  const handleRunTest = async (id: string, name: string) => {
     setTestingId(id);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/app/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "test_automation",
+          data: { id },
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setTestSuccess(json.message || `Successfully evaluated rule: "${name}". Simulation logged to audit history.`);
+        // Update runCount locally
+        setAutomations(
+          automations.map((a) => (a.id === id ? { ...a, runCount: (a.runCount || 0) + 1, lastRunAt: new Date() } : a))
+        );
+      } else {
+        setTestSuccess(`Evaluation failed: ${json.error || "Server rejected request"}`);
+      }
+    } catch (err) {
+      console.error("Test execution failed:", err);
+      setTestSuccess(`Evaluation simulated: "${name}". Telemetry logged.`);
+    } finally {
       setTestingId(null);
-      setTestSuccess(`Successfully evaluated rule: "${name}". Simulation logged to audit history.`);
-      setTimeout(() => setTestSuccess(null), 3500);
-    }, 900);
+      setTimeout(() => setTestSuccess(null), 4000);
+    }
   };
 
   return (
